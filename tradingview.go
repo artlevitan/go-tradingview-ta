@@ -1,6 +1,6 @@
 // Copyright 2022-2023. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// v1.1.0-beta.1
+// v1.1.0-beta.2
 
 package tradingview
 
@@ -34,7 +34,7 @@ const (
 	SignalStrongSell = -2 // STRONG_SELL
 )
 
-type TVData struct {
+type TradingView struct {
 	Recommend struct {
 		Summary     int // Summary
 		Oscillators int // Oscillators
@@ -77,7 +77,7 @@ type TVData struct {
 // symbols – Name of EXCHANGE:SYMBOL (ex: "BINANCE:BTCUSDT" or "BINANCE:ETHUSDT")
 //
 // interval - Interval / Timeframe
-func (t *TVData) Get(symbol string, interval string) error {
+func (t *TradingView) Get(symbol string, interval string) error {
 	// Parameters validation
 	if strings.Count(symbol, ":") != 1 {
 		return errors.New("symbol parameter is not valid")
@@ -242,7 +242,7 @@ func (t *TVData) Get(symbol string, interval string) error {
 		return errors.New(err.Error())
 	}
 
-	type TradingView struct {
+	type Indicators struct {
 		TotalCount int `json:"totalCount"`
 		Data       []struct {
 			S string    `json:"s"`
@@ -250,94 +250,94 @@ func (t *TVData) Get(symbol string, interval string) error {
 		} `json:"data"`
 	}
 
-	indicators := TradingView{}
-	err = json.Unmarshal(jsonData, &indicators)
+	inds := Indicators{}
+	err = json.Unmarshal(jsonData, &inds)
 	if err != nil {
 		return errors.New(err.Error())
 	}
 
 	// Data not received
-	if indicators.TotalCount == 0 {
+	if inds.TotalCount == 0 {
 		return errors.New("data not received")
 	}
 
 	// Recommendations
-	t.Recommend.Summary = tvComputerecommend(indicators.Data[0].D[0])
-	t.Recommend.Oscillators = tvComputerecommend(indicators.Data[0].D[1])
-	t.Recommend.MA = tvComputerecommend(indicators.Data[0].D[2])
+	t.Recommend.Summary = tvComputerecommend(inds.Data[0].D[0])
+	t.Recommend.Oscillators = tvComputerecommend(inds.Data[0].D[1])
+	t.Recommend.MA = tvComputerecommend(inds.Data[0].D[2])
 
 	// Oscillators
 	// Relative Strength Index (14)
-	t.Oscillators.RSI = tvRsi(indicators.Data[0].D[3], indicators.Data[0].D[4])
+	t.Oscillators.RSI = tvRsi(inds.Data[0].D[3], inds.Data[0].D[4])
 
 	// Stochastic %K (14, 3, 3)
-	t.Oscillators.StochK = tvStoch(indicators.Data[0].D[5], indicators.Data[0].D[6], indicators.Data[0].D[7], indicators.Data[0].D[7])
+	t.Oscillators.StochK = tvStoch(inds.Data[0].D[5], inds.Data[0].D[6], inds.Data[0].D[7], inds.Data[0].D[7])
 
 	// Commodity Channel Index (20)
-	t.Oscillators.CCI = tvCci20(indicators.Data[0].D[9], indicators.Data[0].D[10])
+	t.Oscillators.CCI = tvCci20(inds.Data[0].D[9], inds.Data[0].D[10])
 
 	// Average Directional Index (14)
-	t.Oscillators.ADX = tvAdx(indicators.Data[0].D[11], indicators.Data[0].D[12], indicators.Data[0].D[13], indicators.Data[0].D[14], indicators.Data[0].D[15])
+	t.Oscillators.ADX = tvAdx(inds.Data[0].D[11], inds.Data[0].D[12], inds.Data[0].D[13], inds.Data[0].D[14], inds.Data[0].D[15])
 
 	// Awesome Oscillator
-	t.Oscillators.AO = tvAo(indicators.Data[0].D[16], indicators.Data[0].D[17], indicators.Data[0].D[86])
+	t.Oscillators.AO = tvAo(inds.Data[0].D[16], inds.Data[0].D[17], inds.Data[0].D[86])
 
 	// Momentum (10)
-	t.Oscillators.Mom = tvMom(indicators.Data[0].D[18], indicators.Data[0].D[19])
+	t.Oscillators.Mom = tvMom(inds.Data[0].D[18], inds.Data[0].D[19])
 
 	// MACD Level (12, 26)
-	t.Oscillators.MACD = tvMacd(indicators.Data[0].D[20], indicators.Data[0].D[21])
+	t.Oscillators.MACD = tvMacd(inds.Data[0].D[20], inds.Data[0].D[21])
 
 	// Stochastic RSI Fast (3, 3, 14, 14)
-	t.Oscillators.StochRSI = tvSimple(indicators.Data[0].D[22])
+	t.Oscillators.StochRSI = tvSimple(inds.Data[0].D[22])
 
 	// Williams Percent Range (14)
-	t.Oscillators.WR = tvSimple(indicators.Data[0].D[24])
+	t.Oscillators.WR = tvSimple(inds.Data[0].D[24])
 
 	// Bull Bear Power
-	t.Oscillators.BBP = tvSimple(indicators.Data[0].D[26])
+	t.Oscillators.BBP = tvSimple(inds.Data[0].D[26])
 
 	// Ultimate Oscillator (7, 14, 28)
-	t.Oscillators.UO = tvSimple(indicators.Data[0].D[28])
+	t.Oscillators.UO = tvSimple(inds.Data[0].D[28])
 
 	// Moving Averages
 	for i := 33; i < 45; i++ {
 		switch i {
 		case 33:
-			t.MovingAverages.EMA10 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.EMA10 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 34:
-			t.MovingAverages.SMA10 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.SMA10 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 35:
-			t.MovingAverages.EMA20 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.EMA20 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 36:
-			t.MovingAverages.SMA20 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.SMA20 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 37:
-			t.MovingAverages.EMA30 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.EMA30 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 38:
-			t.MovingAverages.SMA30 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.SMA30 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 39:
-			t.MovingAverages.EMA50 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.EMA50 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 40:
-			t.MovingAverages.SMA50 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.SMA50 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 41:
-			t.MovingAverages.EMA100 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.EMA100 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 42:
-			t.MovingAverages.SMA100 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.SMA100 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 43:
-			t.MovingAverages.EMA200 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.EMA200 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 44:
-			t.MovingAverages.SMA200 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+			t.MovingAverages.SMA200 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		}
 	}
 
 	// Ichimoku Base Line (9, 26, 52, 26)
-	t.MovingAverages.Ichimoku = tvSimple(indicators.Data[0].D[45])
+	t.MovingAverages.Ichimoku = tvSimple(inds.Data[0].D[45])
 
 	// Volume Weighted Moving Average (20)
-	t.MovingAverages.VWMA = tvSimple(indicators.Data[0].D[47])
+	t.MovingAverages.VWMA = tvSimple(inds.Data[0].D[47])
 
 	// Hull Moving Average (9)
-	t.MovingAverages.HullMA = tvSimple(indicators.Data[0].D[49])
+	t.MovingAverages.HullMA = tvSimple(inds.Data[0].D[49])
 
 	return nil
 }

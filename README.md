@@ -1,6 +1,31 @@
 # go-tradingview-ta [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 An unofficial Go API simple wrapper to retrieve technical analysis from TradingView.
 
+### Predefined constants
+```go
+const (
+	// Intervals
+	Interval1min   = "1min"
+	Interval5min   = "5min"
+	Interval15min  = "15min"
+	Interval30min  = "30min"
+	Interval1hour  = "1hour"
+	Interval2hour  = "2hour"
+	Interval4hour  = "4hour"
+	Interval1day   = "1day"
+	Interval1week  = "1week"
+	Interval1month = "1month"
+
+	// Result
+	SignalStrongBuy  = 2  // STRONG_BUY
+	SignalBuy        = 1  // BUY
+	SignalNeutral    = 0  // NEUTRAL
+	SignalSell       = -1 // SELL
+	SignalStrongSell = -2 // STRONG_SELL
+)
+
+```
+
 ## Example
 ```go
 package main
@@ -12,21 +37,21 @@ import (
 )
 
 func main() {
-	var tv tradingview.TVData
-	err := tv.Get("BINANCE:BTCUSDT", tradingview.Interval4hour)
+	var ta tradingview.TradingView
+	err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4hour)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("%#v\n", tv) // Full Data
+	fmt.Printf("%#v\n", ta) // Full Data
 
 	// Get the value by key
-	recSummary := tv.Recommend.Summary // Summary
+	recSummary := ta.Recommend.Summary // Summary
 	fmt.Println(recSummary)
 
-	recOsc := tv.Recommend.Oscillators // Oscillators
+	recOsc := ta.Recommend.Oscillators // Oscillators
 	fmt.Println(recOsc)
 
-	recMA := tv.Recommend.MA // Moving Averages
+	recMA := ta.Recommend.MA // Moving Averages
 	fmt.Println(recMA)
 
 	// Text recommendation
