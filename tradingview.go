@@ -28,11 +28,11 @@ const (
 	Interval1month = "1month"
 
 	// Result
-	signalStrongSell = -2 // STRONG_SELL
-	signalSell       = -1 // SELL
-	signalNeutral    = 0  // NEUTRAL
-	signalBuy        = 1  // BUY
-	signalStrongBuy  = 2  // STRONG_BUY
+	SignalStrongSell = -2 // STRONG_SELL
+	SignalSell       = -1 // SELL
+	SignalNeutral    = 0  // NEUTRAL
+	SignalBuy        = 1  // BUY
+	SignalStrongBuy  = 2  // STRONG_BUY
 )
 
 // TradingViewData - format TradingView's Scanner Post Data.
@@ -289,17 +289,17 @@ func TradingViewData(symbol string, interval string) (map[string]int, error) {
 func tvComputerecommend(v float64) int {
 	switch {
 	case v >= -1 && v < -0.5:
-		return signalStrongSell // strong_sell
+		return SignalStrongSell // strong_sell
 	case v >= -0.5 && v < -0.1:
-		return signalSell
+		return SignalSell
 	case v >= -0.1 && v <= 0.1:
-		return signalNeutral // signalNeutral
+		return SignalNeutral // SignalNeutral
 	case v > 0.1 && v <= 0.5:
-		return signalBuy
+		return SignalBuy
 	case v > 0.5 && v <= 1:
-		return signalStrongBuy // strong_buy
+		return SignalStrongBuy // strong_buy
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -307,11 +307,11 @@ func tvComputerecommend(v float64) int {
 func tvRsi(rsi, rsi1 float64) int {
 	switch {
 	case rsi < 30 && rsi1 < rsi:
-		return signalBuy
+		return SignalBuy
 	case rsi > 70 && rsi1 > rsi:
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -319,11 +319,11 @@ func tvRsi(rsi, rsi1 float64) int {
 func tvStoch(k, d, k1, d1 float64) int {
 	switch {
 	case k < 20 && d < 20 && k > d && k1 < d1:
-		return signalBuy
+		return SignalBuy
 	case k > 80 && d > 80 && k < d && k1 > d1:
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -331,11 +331,11 @@ func tvStoch(k, d, k1, d1 float64) int {
 func tvCci20(cci20, cci201 float64) int {
 	switch {
 	case cci20 < -100 && cci20 > cci201:
-		return signalBuy
+		return SignalBuy
 	case cci20 > 100 && cci20 < cci201:
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -343,11 +343,11 @@ func tvCci20(cci20, cci201 float64) int {
 func tvAdx(adx, adxpdi, adxndi, adxpdi1, adxndi1 float64) int {
 	switch {
 	case adx > 20 && adxpdi1 < adxndi1 && adxpdi > adxndi:
-		return signalBuy
+		return SignalBuy
 	case adx > 20 && adxpdi1 > adxndi1 && adxpdi < adxndi:
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -355,11 +355,11 @@ func tvAdx(adx, adxpdi, adxndi, adxpdi1, adxndi1 float64) int {
 func tvAo(ao, ao1, ao2 float64) int {
 	switch {
 	case (ao > 0 && ao1 < 0) || (ao > 0 && ao1 > 0 && ao > ao1 && ao2 > ao1):
-		return signalBuy
+		return SignalBuy
 	case (ao < 0 && ao1 > 0) || (ao < 0 && ao1 < 0 && ao < ao1 && ao2 < ao1):
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -367,11 +367,11 @@ func tvAo(ao, ao1, ao2 float64) int {
 func tvMom(mom, mom1 float64) int {
 	switch {
 	case mom < mom1:
-		return signalSell
+		return SignalSell
 	case mom > mom1:
-		return signalBuy
+		return SignalBuy
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -379,11 +379,11 @@ func tvMom(mom, mom1 float64) int {
 func tvMacd(macd, s float64) int {
 	switch {
 	case macd > s:
-		return signalBuy
+		return SignalBuy
 	case macd < s:
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -391,11 +391,11 @@ func tvMacd(macd, s float64) int {
 func tvSimple(v float64) int {
 	switch {
 	case v == -1:
-		return signalSell
+		return SignalSell
 	case v == 1:
-		return signalBuy
+		return SignalBuy
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
 
@@ -403,10 +403,10 @@ func tvSimple(v float64) int {
 func tvMa(ma, close float64) int {
 	switch {
 	case ma < close:
-		return signalBuy
+		return SignalBuy
 	case ma > close:
-		return signalSell
+		return SignalSell
 	default:
-		return signalNeutral
+		return SignalNeutral
 	}
 }
