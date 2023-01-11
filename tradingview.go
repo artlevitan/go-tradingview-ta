@@ -1,4 +1,6 @@
 // Copyright 2022-2023. All rights reserved.
+// https://github.com/artlevitan/go-tradingview-ta
+// 1.0.0
 // License: MIT
 
 package tradingview
@@ -14,16 +16,16 @@ import (
 
 const (
 	// Intervals
-	interval1min   = "1min"
-	interval5min   = "5min"
-	interval15min  = "15min"
-	interval30min  = "30min"
-	interval1hour  = "1hour"
-	interval2hour  = "2hour"
-	interval4hour  = "4hour"
-	interval1day   = "1day"
-	interval1week  = "1week"
-	interval1month = "1month"
+	Interval1min   = "1min"
+	Interval5min   = "5min"
+	Interval15min  = "15min"
+	Interval30min  = "30min"
+	Interval1hour  = "1hour"
+	Interval2hour  = "2hour"
+	Interval4hour  = "4hour"
+	Interval1day   = "1day"
+	Interval1week  = "1week"
+	Interval1month = "1month"
 
 	// Result
 	signalStrongSell = -2 // STRONG_SELL
@@ -48,35 +50,35 @@ func TradingViewData(symbol string, interval string) (map[string]int, error) {
 
 	var dataInterval string
 	switch interval {
-	case interval1min:
+	case Interval1min:
 		//  1 Minute
 		dataInterval = "1"
-	case interval5min:
+	case Interval5min:
 		//  5 Minutes
 		dataInterval = "5"
-	case interval15min:
+	case Interval15min:
 		//  15 Minutes
 		dataInterval = "15"
-	case interval30min:
+	case Interval30min:
 		//  30 Minutes
 		dataInterval = "30"
-	case interval1hour:
+	case Interval1hour:
 		//  1 Hour
 		dataInterval = "60"
-	case interval2hour:
+	case Interval2hour:
 		//  2 Hours
 		dataInterval = "120"
-	case interval4hour:
+	case Interval4hour:
 		//  4 Hour
 		dataInterval = "240"
-	case interval1week:
+	case Interval1week:
 		//  1 Week
 		dataInterval = "1W"
-	case interval1month:
+	case Interval1month:
 		//  1 Month
 		dataInterval = "1M"
 	default: // Default 1 day
-		dataInterval = interval1day
+		dataInterval = Interval1day
 	}
 
 	// Request preparation

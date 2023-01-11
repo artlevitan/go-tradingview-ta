@@ -16,9 +16,9 @@ func TestTradingViewData(t *testing.T) {
 		want    map[string]int
 		wantErr bool
 	}{
-		{name: "BINANCE:BTCUSDT", args: args{symbol: "BINANCE:BTCUSDT", interval: interval15min}, want: map[string]int{}, wantErr: false},
-		{name: "BINANCE:ETCUSDT", args: args{symbol: "BINANCE:ETCUSDT", interval: interval5min}, want: map[string]int{}, wantErr: false},
-		{name: "BINANCE:ETCUSDT", args: args{symbol: "BINANCE:ETCUSDT", interval: interval4hour}, want: map[string]int{}, wantErr: false},
+		{name: "BINANCE:BTCUSDT", args: args{symbol: "BINANCE:BTCUSDT", interval: Interval15min}, want: map[string]int{}, wantErr: false},
+		{name: "BINANCE:ETCUSDT", args: args{symbol: "BINANCE:ETCUSDT", interval: Interval5min}, want: map[string]int{}, wantErr: false},
+		{name: "BINANCE:ETCUSDT", args: args{symbol: "BINANCE:ETCUSDT", interval: Interval4hour}, want: map[string]int{}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
