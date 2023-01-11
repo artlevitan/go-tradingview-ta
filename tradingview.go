@@ -1,6 +1,6 @@
 // Copyright 2022-2023. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// 1.0.0
+// 1.1.0
 // License: MIT
 
 package tradingview
@@ -28,24 +28,60 @@ const (
 	Interval1month = "1month"
 
 	// Result
-	SignalStrongSell = -2 // STRONG_SELL
-	SignalSell       = -1 // SELL
-	SignalNeutral    = 0  // NEUTRAL
-	SignalBuy        = 1  // BUY
 	SignalStrongBuy  = 2  // STRONG_BUY
+	SignalBuy        = 1  // BUY
+	SignalNeutral    = 0  // NEUTRAL
+	SignalSell       = -1 // SELL
+	SignalStrongSell = -2 // STRONG_SELL
 )
 
-// TradingViewData - format TradingView's Scanner Post Data.
+type TVData struct {
+	Recommend struct {
+		Summary     int // Summary
+		Oscillators int // Oscillators
+		MA          int // Moving Averages
+	}
+	Oscillators struct {
+		RSI      int // Relative Strength Index (14)
+		StochK   int // Stochastic %K (14, 3, 3)
+		CCI      int // Commodity Channel Index (20)
+		ADX      int // Average Directional Index (14)
+		AO       int // Awesome Oscillator
+		Mom      int // Momentum (10)
+		MACD     int // MACD Level (12, 26)
+		StochRSI int // Stochastic RSI Fast (3, 3, 14, 14)
+		WR       int // Williams Percent Range (14)
+		BBP      int // Bull Bear Power
+		UO       int // Ultimate Oscillator (7, 14, 28)
+	}
+	MovingAverages struct {
+		EMA10    int // Exponential Moving Average (10)
+		SMA10    int // Simple Moving Average (10)
+		EMA20    int // Exponential Moving Average (20)
+		SMA20    int // Simple Moving Average (20)
+		EMA30    int // Exponential Moving Average (30)
+		SMA30    int // Simple Moving Average (30)
+		EMA50    int // Exponential Moving Average (50)
+		SMA50    int // Simple Moving Average (50)
+		EMA100   int // Exponential Moving Average (100)
+		SMA100   int // Simple Moving Average (100)
+		EMA200   int // Exponential Moving Average (200)
+		SMA200   int // Simple Moving Average (200)
+		Ichimoku int // Ichimoku Base Line (9, 26, 52, 26)
+		VWMA     int // Volume Weighted Moving Average (20)
+		HullMA   int // Hull Moving Average (9)
+	}
+}
+
+// Get - format TradingView's Scanner Post Data
 //
 // symbols – Name of EXCHANGE:SYMBOL (ex: "BINANCE:BTCUSDT" or "BINANCE:ETHUSDT")
 //
 // interval - Interval / Timeframe
-func TradingViewData(symbol string, interval string) (map[string]int, error) {
-	result := map[string]int{}
-
+func (t *TVData) Get(symbol string, interval string) error {
 	// Parameters validation
 	if strings.Count(symbol, ":") != 1 {
-		return result, errors.New("symbol parameter is not valid")
+		return errors.New("symbol parameter is not valid")
 	}
 
 	var dataInterval string
@@ -190,7 +226,7 @@ func TradingViewData(symbol string, interval string) (map[string]int, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://scanner.tradingview.com/crypto/scan", strings.NewReader(payload))
 	if err != nil {
-		return result, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 
 	// Headers
@@ -198,13 +234,13 @@ func TradingViewData(symbol string, interval string) (map[string]int, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return result, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 	defer res.Body.Close()
 
 	jsonData, err := io.ReadAll(res.Body)
 	if err != nil {
-		return result, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 
 	type TradingView struct {
@@ -218,88 +254,110 @@ func TradingViewData(symbol string, interval string) (map[string]int, error) {
 	indicators := TradingView{}
 	err = json.Unmarshal(jsonData, &indicators)
 	if err != nil {
-		return result, errors.New(err.Error())
+		return errors.New(err.Error())
 	}
 
 	// Data not received
 	if indicators.TotalCount == 0 {
-		return result, errors.New("data not received")
+		return errors.New("data not received")
 	}
 
-	// RECOMMENDATIONS
-	result["recommend_summary"] = tvComputerecommend(indicators.Data[0].D[0])
-	result["recommend_oscillators"] = tvComputerecommend(indicators.Data[0].D[1])
-	result["recommend_moving_averages"] = tvComputerecommend(indicators.Data[0].D[2])
+	// Recommendations
+	t.Recommend.Summary = tvComputerecommend(indicators.Data[0].D[0])
+	t.Recommend.Oscillators = tvComputerecommend(indicators.Data[0].D[1])
+	t.Recommend.MA = tvComputerecommend(indicators.Data[0].D[2])
 
-	// OSCILLATORS
-	// RSI (14)
-	result["computed_oscillators_RSI"] = tvRsi(indicators.Data[0].D[3], indicators.Data[0].D[4])
+	// Oscillators
+	// Relative Strength Index (14)
+	t.Oscillators.RSI = tvRsi(indicators.Data[0].D[3], indicators.Data[0].D[4])
 
-	// Stoch %K
-	result["computed_oscillators_STOCHK"] = tvStoch(indicators.Data[0].D[5], indicators.Data[0].D[6], indicators.Data[0].D[7], indicators.Data[0].D[7])
+	// Stochastic %K (14, 3, 3)
+	t.Oscillators.StochK = tvStoch(indicators.Data[0].D[5], indicators.Data[0].D[6], indicators.Data[0].D[7], indicators.Data[0].D[7])
 
-	// CCI (20)
-	result["computed_oscillators_CCI"] = tvCci20(indicators.Data[0].D[9], indicators.Data[0].D[10])
+	// Commodity Channel Index (20)
+	t.Oscillators.CCI = tvCci20(indicators.Data[0].D[9], indicators.Data[0].D[10])
 
-	// ADX (14)
-	result["computed_oscillators_ADX"] = tvAdx(indicators.Data[0].D[11], indicators.Data[0].D[12], indicators.Data[0].D[13], indicators.Data[0].D[14], indicators.Data[0].D[15])
+	// Average Directional Index (14)
+	t.Oscillators.ADX = tvAdx(indicators.Data[0].D[11], indicators.Data[0].D[12], indicators.Data[0].D[13], indicators.Data[0].D[14], indicators.Data[0].D[15])
 
-	// AO
-	result["computed_oscillators_AO"] = tvAo(indicators.Data[0].D[16], indicators.Data[0].D[17], indicators.Data[0].D[86])
+	// Awesome Oscillator
+	t.Oscillators.AO = tvAo(indicators.Data[0].D[16], indicators.Data[0].D[17], indicators.Data[0].D[86])
 
-	// Mom (10)
-	result["computed_oscillators_Mom"] = tvMom(indicators.Data[0].D[18], indicators.Data[0].D[19])
+	// Momentum (10)
+	t.Oscillators.Mom = tvMom(indicators.Data[0].D[18], indicators.Data[0].D[19])
 
-	// MACD
-	result["computed_oscillators_MACD"] = tvMacd(indicators.Data[0].D[20], indicators.Data[0].D[21])
+	// MACD Level (12, 26)
+	t.Oscillators.MACD = tvMacd(indicators.Data[0].D[20], indicators.Data[0].D[21])
 
-	// Stoch RSI
-	result["computed_oscillators_STOCHRSI"] = tvSimple(indicators.Data[0].D[22])
+	// Stochastic RSI Fast (3, 3, 14, 14)
+	t.Oscillators.StochRSI = tvSimple(indicators.Data[0].D[22])
 
-	// W%R
-	result["computed_oscillators_WR"] = tvSimple(indicators.Data[0].D[24])
+	// Williams Percent Range (14)
+	t.Oscillators.WR = tvSimple(indicators.Data[0].D[24])
 
-	// BBP
-	result["computed_oscillators_BBP"] = tvSimple(indicators.Data[0].D[26])
+	// Bull Bear Power
+	t.Oscillators.BBP = tvSimple(indicators.Data[0].D[26])
 
-	// UO
-	result["computed_oscillators_UO"] = tvSimple(indicators.Data[0].D[28])
+	// Ultimate Oscillator (7, 14, 28)
+	t.Oscillators.UO = tvSimple(indicators.Data[0].D[28])
 
-	// MOVING AVERAGES
-	maList := []string{"EMA10", "SMA10", "EMA20", "SMA20", "EMA30", "SMA30", "EMA50", "SMA50", "EMA100", "SMA100", "EMA200", "SMA200"}
-	maListCounter := 0
+	// Moving Averages
 	for i := 33; i < 45; i++ {
-		result["computed_ma_"+maList[maListCounter]] = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
-		maListCounter++
+		switch i {
+		case 33:
+			t.MovingAverages.EMA10 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 34:
+			t.MovingAverages.SMA10 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 35:
+			t.MovingAverages.EMA20 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 36:
+			t.MovingAverages.SMA20 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 37:
+			t.MovingAverages.EMA30 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 38:
+			t.MovingAverages.SMA30 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 39:
+			t.MovingAverages.EMA50 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 40:
+			t.MovingAverages.SMA50 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 41:
+			t.MovingAverages.EMA100 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 42:
+			t.MovingAverages.SMA100 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 43:
+			t.MovingAverages.EMA200 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		case 44:
+			t.MovingAverages.SMA200 = tvMa(indicators.Data[0].D[i], indicators.Data[0].D[30])
+		}
 	}
 
-	// ICHIMOKU
-	result["computed_ma_Ichimoku"] = tvSimple(indicators.Data[0].D[45])
+	// Ichimoku Base Line (9, 26, 52, 26)
+	t.MovingAverages.Ichimoku = tvSimple(indicators.Data[0].D[45])
 
-	// VWMA
-	result["computed_ma_VWMA"] = tvSimple(indicators.Data[0].D[47])
+	// Volume Weighted Moving Average (20)
+	t.MovingAverages.VWMA = tvSimple(indicators.Data[0].D[47])
 
-	// HullMA
-	result["computed_ma_HullMA"] = tvSimple(indicators.Data[0].D[49])
+	// Hull Moving Average (9)
+	t.MovingAverages.HullMA = tvSimple(indicators.Data[0].D[49])
 
-	return result, nil
+	return nil
 }
 
 // Compute Recommend
 func tvComputerecommend(v float64) int {
 	switch {
-	case v >= -1 && v < -0.5:
-		return SignalStrongSell // strong_sell
-	case v >= -0.5 && v < -0.1:
-		return SignalSell
-	case v >= -0.1 && v <= 0.1:
-		return SignalNeutral // SignalNeutral
 	case v > 0.1 && v <= 0.5:
-		return SignalBuy
+		return SignalBuy // BUY
 	case v > 0.5 && v <= 1:
-		return SignalStrongBuy // strong_buy
+		return SignalStrongBuy // STRONG_BUY
+	case v >= -0.1 && v <= 0.1:
+		return SignalNeutral // NEUTRAL
+	case v >= -1 && v < -0.5:
+		return SignalStrongSell // STRONG_SELL
+	case v >= -0.5 && v < -0.1:
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -307,11 +365,11 @@ func tvComputerecommend(v float64) int {
 func tvRsi(rsi, rsi1 float64) int {
 	switch {
 	case rsi < 30 && rsi1 < rsi:
-		return SignalBuy
+		return SignalBuy // BUY
 	case rsi > 70 && rsi1 > rsi:
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -319,11 +377,11 @@ func tvRsi(rsi, rsi1 float64) int {
 func tvStoch(k, d, k1, d1 float64) int {
 	switch {
 	case k < 20 && d < 20 && k > d && k1 < d1:
-		return SignalBuy
+		return SignalBuy // BUY
 	case k > 80 && d > 80 && k < d && k1 > d1:
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -331,11 +389,11 @@ func tvStoch(k, d, k1, d1 float64) int {
 func tvCci20(cci20, cci201 float64) int {
 	switch {
 	case cci20 < -100 && cci20 > cci201:
-		return SignalBuy
+		return SignalBuy // BUY
 	case cci20 > 100 && cci20 < cci201:
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -343,11 +401,11 @@ func tvCci20(cci20, cci201 float64) int {
 func tvAdx(adx, adxpdi, adxndi, adxpdi1, adxndi1 float64) int {
 	switch {
 	case adx > 20 && adxpdi1 < adxndi1 && adxpdi > adxndi:
-		return SignalBuy
+		return SignalBuy // BUY
 	case adx > 20 && adxpdi1 > adxndi1 && adxpdi < adxndi:
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -355,23 +413,23 @@ func tvAdx(adx, adxpdi, adxndi, adxpdi1, adxndi1 float64) int {
 func tvAo(ao, ao1, ao2 float64) int {
 	switch {
 	case (ao > 0 && ao1 < 0) || (ao > 0 && ao1 > 0 && ao > ao1 && ao2 > ao1):
-		return SignalBuy
+		return SignalBuy // BUY
 	case (ao < 0 && ao1 > 0) || (ao < 0 && ao1 < 0 && ao < ao1 && ao2 < ao1):
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
 // Compute Momentum
 func tvMom(mom, mom1 float64) int {
 	switch {
-	case mom < mom1:
-		return SignalSell
 	case mom > mom1:
-		return SignalBuy
+		return SignalBuy // BUY
+	case mom < mom1:
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -379,23 +437,23 @@ func tvMom(mom, mom1 float64) int {
 func tvMacd(macd, s float64) int {
 	switch {
 	case macd > s:
-		return SignalBuy
+		return SignalBuy // BUY
 	case macd < s:
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
 // Compute Simple
 func tvSimple(v float64) int {
 	switch {
-	case v == -1:
-		return SignalSell
 	case v == 1:
-		return SignalBuy
+		return SignalBuy // BUY
+	case v == -1:
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
 
@@ -403,10 +461,10 @@ func tvSimple(v float64) int {
 func tvMa(ma, close float64) int {
 	switch {
 	case ma < close:
-		return SignalBuy
+		return SignalBuy // BUY
 	case ma > close:
-		return SignalSell
+		return SignalSell // SELL
 	default:
-		return SignalNeutral
+		return SignalNeutral // NEUTRAL
 	}
 }
