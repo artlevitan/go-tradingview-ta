@@ -1,6 +1,6 @@
 // Copyright 2022-2023. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// v1.1.0-beta.2
+// v1.2.1
 
 package tradingview
 
@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	// Intervals
 	Interval1min   = "1min"
 	Interval5min   = "5min"
 	Interval15min  = "15min"
@@ -26,7 +25,6 @@ const (
 	Interval1week  = "1week"
 	Interval1month = "1month"
 
-	// Result
 	SignalStrongBuy  = 2  // STRONG_BUY
 	SignalBuy        = 1  // BUY
 	SignalNeutral    = 0  // NEUTRAL
@@ -34,6 +32,7 @@ const (
 	SignalStrongSell = -2 // STRONG_SELL
 )
 
+// TradingView Payload Data
 type TradingView struct {
 	Recommend struct {
 		Summary     int // Summary
@@ -74,9 +73,9 @@ type TradingView struct {
 
 // Get - format TradingView's Scanner Post Data
 //
-// symbols – Name of EXCHANGE:SYMBOL (ex: "BINANCE:BTCUSDT" or "BINANCE:ETHUSDT")
+// symbol string – Name of EXCHANGE:SYMBOL (ex: "BINANCE:BTCUSDT" or "BINANCE:ETHUSDT")
 //
-// interval - Interval / Timeframe
+// interval string - Interval / Timeframe
 func (t *TradingView) Get(symbol string, interval string) error {
 	// Parameters validation
 	if strings.Count(symbol, ":") != 1 {
@@ -242,6 +241,7 @@ func (t *TradingView) Get(symbol string, interval string) error {
 		return errors.New(err.Error())
 	}
 
+	// Indicators data
 	type Indicators struct {
 		TotalCount int `json:"totalCount"`
 		Data       []struct {
@@ -262,9 +262,9 @@ func (t *TradingView) Get(symbol string, interval string) error {
 	}
 
 	// Recommendations
-	t.Recommend.Summary = tvComputerecommend(inds.Data[0].D[0])
-	t.Recommend.Oscillators = tvComputerecommend(inds.Data[0].D[1])
-	t.Recommend.MA = tvComputerecommend(inds.Data[0].D[2])
+	t.Recommend.Summary = tvComputeRecommend(inds.Data[0].D[0])
+	t.Recommend.Oscillators = tvComputeRecommend(inds.Data[0].D[1])
+	t.Recommend.MA = tvComputeRecommend(inds.Data[0].D[2])
 
 	// Oscillators
 	// Relative Strength Index (14)
@@ -304,28 +304,40 @@ func (t *TradingView) Get(symbol string, interval string) error {
 	for i := 33; i < 45; i++ {
 		switch i {
 		case 33:
+			// Exponential Moving Average (10)
 			t.MovingAverages.EMA10 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 34:
+			// Simple Moving Average (10)
 			t.MovingAverages.SMA10 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 35:
+			// Exponential Moving Average (20)
 			t.MovingAverages.EMA20 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 36:
+			// Simple Moving Average (20)
 			t.MovingAverages.SMA20 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 37:
+			// Exponential Moving Average (30)
 			t.MovingAverages.EMA30 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 38:
+			// Simple Moving Average (30)
 			t.MovingAverages.SMA30 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 39:
+			// Exponential Moving Average (50)
 			t.MovingAverages.EMA50 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 40:
+			// Simple Moving Average (50)
 			t.MovingAverages.SMA50 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 41:
+			// Exponential Moving Average (100)
 			t.MovingAverages.EMA100 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 42:
+			// Simple Moving Average (100)
 			t.MovingAverages.SMA100 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 43:
+			// Exponential Moving Average (200)
 			t.MovingAverages.EMA200 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		case 44:
+			// Simple Moving Average (200)
 			t.MovingAverages.SMA200 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
 		}
 	}
@@ -342,8 +354,8 @@ func (t *TradingView) Get(symbol string, interval string) error {
 	return nil
 }
 
-// Compute Recommend
-func tvComputerecommend(v float64) int {
+// tvComputeRecommend - Compute Recommend
+func tvComputeRecommend(v float64) int {
 	switch {
 	case v > 0.1 && v <= 0.5:
 		return SignalBuy // BUY
@@ -360,7 +372,7 @@ func tvComputerecommend(v float64) int {
 	}
 }
 
-// Compute Relative Strength Index
+// tvRsi - Compute Relative Strength Index
 func tvRsi(rsi, rsi1 float64) int {
 	switch {
 	case rsi < 30 && rsi1 < rsi:
@@ -372,7 +384,7 @@ func tvRsi(rsi, rsi1 float64) int {
 	}
 }
 
-// Compute Stochastic
+// tvStoch - Compute Stochastic
 func tvStoch(k, d, k1, d1 float64) int {
 	switch {
 	case k < 20 && d < 20 && k > d && k1 < d1:
@@ -384,7 +396,7 @@ func tvStoch(k, d, k1, d1 float64) int {
 	}
 }
 
-// Compute Commodity Channel Index 20
+// tvCci20 - Compute Commodity Channel Index 20
 func tvCci20(cci20, cci201 float64) int {
 	switch {
 	case cci20 < -100 && cci20 > cci201:
@@ -396,7 +408,7 @@ func tvCci20(cci20, cci201 float64) int {
 	}
 }
 
-// Compute Average Directional Index
+// tvAdx - Compute Average Directional Index
 func tvAdx(adx, adxpdi, adxndi, adxpdi1, adxndi1 float64) int {
 	switch {
 	case adx > 20 && adxpdi1 < adxndi1 && adxpdi > adxndi:
@@ -408,7 +420,7 @@ func tvAdx(adx, adxpdi, adxndi, adxpdi1, adxndi1 float64) int {
 	}
 }
 
-// Compute Awesome Oscillator
+// tvAo - Compute Awesome Oscillator
 func tvAo(ao, ao1, ao2 float64) int {
 	switch {
 	case (ao > 0 && ao1 < 0) || (ao > 0 && ao1 > 0 && ao > ao1 && ao2 > ao1):
@@ -420,7 +432,7 @@ func tvAo(ao, ao1, ao2 float64) int {
 	}
 }
 
-// Compute Momentum
+// tvMom - Compute Momentum
 func tvMom(mom, mom1 float64) int {
 	switch {
 	case mom > mom1:
@@ -432,7 +444,7 @@ func tvMom(mom, mom1 float64) int {
 	}
 }
 
-// Compute Moving Average Convergence/Divergence
+// tvMacd - Compute Moving Average Convergence/Divergence
 func tvMacd(macd, s float64) int {
 	switch {
 	case macd > s:
@@ -444,7 +456,7 @@ func tvMacd(macd, s float64) int {
 	}
 }
 
-// Compute Simple
+// tvSimple - Compute Simple
 func tvSimple(v float64) int {
 	switch {
 	case v == 1:
@@ -456,7 +468,7 @@ func tvSimple(v float64) int {
 	}
 }
 
-// Compute Moving Average
+// tvMa - Compute Moving Average
 func tvMa(ma, close float64) int {
 	switch {
 	case ma < close:
