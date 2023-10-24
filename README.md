@@ -35,44 +35,44 @@ const (
 package main
 
 import (
- "fmt"
+	"fmt"
 
- tradingview "github.com/artlevitan/go-tradingview-ta"
+	tradingview "github.com/artlevitan/go-tradingview-ta"
 )
 
 func main() {
- var ta tradingview.TradingView
- err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4hour)
- if err != nil {
-  fmt.Println(err)
- }
- fmt.Printf("%#v\n", ta) // Full Data
+	var ta tradingview.TradingView
+	err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4hour)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("%#v\n", ta) // Full Data
 
- // Get the value by key
- recSummary := ta.Recommend.Summary // Summary
- fmt.Println(recSummary)
+	// Get the value by key
+	recSummary := ta.Recommend.Summary // Summary
+	fmt.Println(recSummary)
 
- recOsc := ta.Recommend.Oscillators // Oscillators
- fmt.Println(recOsc)
+	recOsc := ta.Recommend.Oscillators // Oscillators
+	fmt.Println(recOsc)
 
- recMA := ta.Recommend.MA // Moving Averages
- fmt.Println(recMA)
+	recMA := ta.Recommend.MA // Moving Averages
+	fmt.Println(recMA)
 
- // Text recommendation
- switch recSummary {
- case tradingview.SignalStrongSell:
-  fmt.Println("STRONG_SELL")
- case tradingview.SignalSell:
-  fmt.Println("SELL")
- case tradingview.SignalNeutral:
-  fmt.Println("NEUTRAL")
- case tradingview.SignalBuy:
-  fmt.Println("BUY")
- case tradingview.SignalStrongBuy:
-  fmt.Println("STRONG_BUY")
- default:
-  fmt.Println("An error has occurred")
- }
+	// Text recommendation
+	switch recSummary {
+	case tradingview.SignalStrongSell:
+		fmt.Println("STRONG_SELL")
+	case tradingview.SignalSell:
+		fmt.Println("SELL")
+	case tradingview.SignalNeutral:
+		fmt.Println("NEUTRAL")
+	case tradingview.SignalBuy:
+		fmt.Println("BUY")
+	case tradingview.SignalStrongBuy:
+		fmt.Println("STRONG_BUY")
+	default:
+		fmt.Println("An error has occurred")
+	}
 }
 
 ```
