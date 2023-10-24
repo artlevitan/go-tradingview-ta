@@ -8,23 +8,23 @@ An unofficial Go API simple wrapper to retrieve technical analysis from TradingV
 
 ```go
 const (
- // Intervals
-Interval1min   string = "1min"
-Interval5min   string = "5min"
-Interval15min  string = "15min"
-Interval30min  string = "30min"
-Interval1hour  string = "1hour"
-Interval2hour  string = "2hour"
-Interval4hour  string = "4hour"
-Interval1day   string = "1day"
-Interval1week  string = "1week"
-Interval1month string = "1month"
+    // Intervals
+    Interval1min   string = "1min"
+    Interval5min   string = "5min"
+    Interval15min  string = "15min"
+    Interval30min  string = "30min"
+    Interval1hour  string = "1hour"
+    Interval2hour  string = "2hour"
+    Interval4hour  string = "4hour"
+    Interval1day   string = "1day"
+    Interval1week  string = "1week"
+    Interval1month string = "1month"
 
-SignalStrongBuy  int = 2  // STRONG_BUY
-SignalBuy        int = 1  // BUY
-SignalNeutral    int = 0  // NEUTRAL
-SignalSell       int = -1 // SELL
-SignalStrongSell int = -2 // STRONG_SELL
+    SignalStrongBuy  int = 2  // STRONG_BUY
+    SignalBuy        int = 1  // BUY
+    SignalNeutral    int = 0  // NEUTRAL
+    SignalSell       int = -1 // SELL
+    SignalStrongSell int = -2 // STRONG_SELL
 )
 
 ```
