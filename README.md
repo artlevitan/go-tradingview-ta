@@ -4,6 +4,12 @@ An unofficial Go API simple wrapper to retrieve technical analysis from TradingV
 
 <img src="/editor/images/promo.jpg" alt="Go TradingView" style="max-width:100%">
 
+## Installation
+
+```bash
+go get github.com/artlevitan/go-tradingview-ta
+```
+
 ### Predefined constants
 
 ```go
@@ -26,7 +32,6 @@ const (
 	SignalSell       int = -1 // SELL
 	SignalStrongSell int = -2 // STRONG_SELL
 )
-
 ```
 
 ## Example
@@ -40,19 +45,22 @@ import (
 	tradingview "github.com/artlevitan/go-tradingview-ta"
 )
 
+const SYMBOL = "BINANCE:BTCUSDT" // https://www.tradingview.com/symbols/BTCUSDT/technicals/
+
 func main() {
 	var ta tradingview.TradingView
-	err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4Hour)
+	
+	// Fetch data for the specified symbol at a 4-hour interval
+	err := ta.Get(SYMBOL, tradingview.Interval4Hour)
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
-	// fmt.Printf("%#v\n", ta) // Full Data
-
-	// Summary recommendation
+	
+	// Get the summary trading recommendation
 	recSummary := ta.Recommend.Global.Summary
-	fmt.Println(recSummary)
 
-	// Text recommendation
+	// Print the recommendation based on the signal
 	switch recSummary {
 	case tradingview.SignalStrongSell:
 		fmt.Println("STRONG_SELL")
@@ -68,11 +76,10 @@ func main() {
 		fmt.Println("An error has occurred")
 	}
 
-	// Ichimoku Base Line (9, 26, 52, 26)
-	ichimoku := ta.Recommend.MovingAverages.Ichimoku 
-	fmt.Println(ichimoku)
+	// Print the latest closing price
+	clPrice := ta.Value.Prices.Close
+	fmt.Println("Closing price:", clPrice)
 }
-
 ```
 
 ## License
