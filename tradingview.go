@@ -1,6 +1,6 @@
 // Copyright 2022-2024. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// v1.2.4
+// v1.3.0
 
 package tradingview
 
@@ -10,346 +10,517 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 const (
-	Interval1min   string = "1min"
-	Interval5min   string = "5min"
-	Interval15min  string = "15min"
-	Interval30min  string = "30min"
-	Interval1hour  string = "1hour"
-	Interval2hour  string = "2hour"
-	Interval4hour  string = "4hour"
-	Interval1day   string = "1day"
-	Interval1week  string = "1week"
-	Interval1month string = "1month"
+	Interval1Min   string = "1"   // 1 minute
+	Interval5Min   string = "5"   // 5 minutes
+	Interval15Min  string = "15"  // 15 minutes
+	Interval30Min  string = "30"  // 30 minutes
+	Interval1Hour  string = "60"  // 1 hour
+	Interval2Hour  string = "120" // 2 hours
+	Interval4Hour  string = "240" // 4 hours
+	Interval1Day   string = "1D"  // 1 day
+	Interval1Week  string = "1W"  // 1 week
+	Interval1Month string = "1M"  // 1 month
 
 	SignalStrongBuy  int = 2  // STRONG_BUY
 	SignalBuy        int = 1  // BUY
 	SignalNeutral    int = 0  // NEUTRAL
 	SignalSell       int = -1 // SELL
 	SignalStrongSell int = -2 // STRONG_SELL
+
+	// Deprecated
+	Interval1min   string = Interval1Min
+	Interval5min   string = Interval5Min
+	Interval15min  string = Interval15Min
+	Interval30min  string = Interval30Min
+	Interval1hour  string = Interval1Hour
+	Interval2hour  string = Interval2Hour
+	Interval4hour  string = Interval4Hour
+	Interval1day   string = Interval1Day
+	Interval1week  string = Interval1Week
+	Interval1month string = Interval1Month
 )
 
 // TradingView Payload Data
 type TradingView struct {
 	Recommend struct {
-		Summary     int // Summary
-		Oscillators int // Oscillators
-		MA          int // Moving Averages
+		Global struct {
+			Summary     int // Summary recommendation
+			Oscillators int // Oscillators recommendation
+			MA          int // Moving Averages recommendation
+		}
+		Oscillators struct {
+			RSI      int // Relative Strength Index (14)
+			StochK   int // Stochastic %K (14, 3, 3)
+			CCI      int // Commodity Channel Index (20)
+			ADX      int // Average Directional Index (14)
+			AO       int // Awesome Oscillator
+			Mom      int // Momentum (10)
+			MACD     int // MACD Level (12, 26)
+			StochRSI int // Stochastic RSI Fast (3, 3, 14, 14)
+			WR       int // Williams Percent Range (14)
+			BBP      int // Bull Bear Power
+			UO       int // Ultimate Oscillator (7, 14, 28)
+		}
+		MovingAverages struct {
+			EMA10    int // Exponential Moving Average (EMA10)
+			SMA10    int // Simple Moving Average (SMA10)
+			EMA20    int // Exponential Moving Average (EMA20)
+			SMA20    int // Simple Moving Average (SMA20)
+			EMA30    int // Exponential Moving Average (EMA30)
+			SMA30    int // Simple Moving Average (SMA30)
+			EMA50    int // Exponential Moving Average (EMA50)
+			SMA50    int // Simple Moving Average (SMA50)
+			EMA100   int // Exponential Moving Average (EMA100)
+			SMA100   int // Simple Moving Average (SMA100)
+			EMA200   int // Exponential Moving Average (EMA200)
+			SMA200   int // Simple Moving Average (SMA200)
+			Ichimoku int // Ichimoku Base Line (9, 26, 52, 26)
+			VWMA     int // Volume Weighted Moving Average (20)
+			HullMA   int // Hull Moving Average (HullMA9)
+		}
 	}
-	Oscillators struct {
-		RSI      int // Relative Strength Index (14)
-		StochK   int // Stochastic %K (14, 3, 3)
-		CCI      int // Commodity Channel Index (20)
-		ADX      int // Average Directional Index (14)
-		AO       int // Awesome Oscillator
-		Mom      int // Momentum (10)
-		MACD     int // MACD Level (12, 26)
-		StochRSI int // Stochastic RSI Fast (3, 3, 14, 14)
-		WR       int // Williams Percent Range (14)
-		BBP      int // Bull Bear Power
-		UO       int // Ultimate Oscillator (7, 14, 28)
-	}
-	MovingAverages struct {
-		EMA10    int // Exponential Moving Average (10)
-		SMA10    int // Simple Moving Average (10)
-		EMA20    int // Exponential Moving Average (20)
-		SMA20    int // Simple Moving Average (20)
-		EMA30    int // Exponential Moving Average (30)
-		SMA30    int // Simple Moving Average (30)
-		EMA50    int // Exponential Moving Average (50)
-		SMA50    int // Simple Moving Average (50)
-		EMA100   int // Exponential Moving Average (100)
-		SMA100   int // Simple Moving Average (100)
-		EMA200   int // Exponential Moving Average (200)
-		SMA200   int // Simple Moving Average (200)
-		Ichimoku int // Ichimoku Base Line (9, 26, 52, 26)
-		VWMA     int // Volume Weighted Moving Average (20)
-		HullMA   int // Hull Moving Average (9)
+	Value struct {
+		Global struct {
+			Summary     float64 // Summary recommendation
+			Oscillators float64 // Oscillators recommendation
+			MA          float64 // Moving Averages recommendation
+		}
+		Oscillators struct {
+			RSI    float64  // Relative Strength Index (14)
+			StochK float64  // Stochastic %K (14, 3, 3)
+			CCI    float64  // Commodity Channel Index (20)
+			ADX    struct { // Average Directional Index (14)
+				Value    float64 // ADX Value
+				PlusDI   float64 // ADX+DI
+				MinusDI  float64 // ADX-DI
+				PlusDI1  float64 // ADX+DI[1]
+				MinusDI1 float64 // ADX-DI[1]
+			}
+			AO struct { // Awesome Oscillator
+				Value float64 // AO current value
+				Prev1 float64 // AO[1]
+				Prev2 float64 // AO[2]
+			}
+			Mom  float64  // Momentum (10)
+			MACD struct { // MACD Level (12, 26)
+				Macd   float64 // MACD line
+				Signal float64 // Signal line
+			}
+			StochRSI float64 // Stochastic RSI Fast (3, 3, 14, 14)
+			WR       float64 // Williams Percent Range (14)
+			BBP      float64 // Bull Bear Power
+			UO       float64 // Ultimate Oscillator (7, 14, 28)
+		}
+		MovingAverages struct {
+			EMA10    float64 // Exponential Moving Average (EMA10)
+			SMA10    float64 // Simple Moving Average (SMA10)
+			EMA20    float64 // Exponential Moving Average (EMA20)
+			SMA20    float64 // Simple Moving Average (SMA20)
+			EMA30    float64 // Exponential Moving Average (EMA30)
+			SMA30    float64 // Simple Moving Average (SMA30)
+			EMA50    float64 // Exponential Moving Average (EMA50)
+			SMA50    float64 // Simple Moving Average (SMA50)
+			EMA100   float64 // Exponential Moving Average (EMA100)
+			SMA100   float64 // Simple Moving Average (SMA100)
+			EMA200   float64 // Exponential Moving Average (EMA200)
+			SMA200   float64 // Simple Moving Average (SMA200)
+			Ichimoku float64 // Ichimoku Base Line (9, 26, 52, 26)
+			VWMA     float64 // Volume Weighted Moving Average (20)
+			HullMA   float64 // Hull Moving Average (HullMA9)
+		}
+		Pivots struct {
+			Classic struct {
+				Middle float64 // Classic Pivot Middle (Pivot.M.Classic.Middle)
+				R1     float64 // Resistance 1 (Pivot.M.Classic.R1)
+				R2     float64 // Resistance 2 (Pivot.M.Classic.R2)
+				R3     float64 // Resistance 3 (Pivot.M.Classic.R3)
+				S1     float64 // Support 1 (Pivot.M.Classic.S1)
+				S2     float64 // Support 2 (Pivot.M.Classic.S2)
+				S3     float64 // Support 3 (Pivot.M.Classic.S3)
+			}
+			Fibonacci struct {
+				Middle float64 // Fibonacci Pivot Middle (Pivot.M.Fibonacci.Middle)
+				R1     float64 // Resistance 1 (Pivot.M.Fibonacci.R1)
+				R2     float64 // Resistance 2 (Pivot.M.Fibonacci.R2)
+				R3     float64 // Resistance 3 (Pivot.M.Fibonacci.R3)
+				S1     float64 // Support 1 (Pivot.M.Fibonacci.S1)
+				S2     float64 // Support 2 (Pivot.M.Fibonacci.S2)
+				S3     float64 // Support 3 (Pivot.M.Fibonacci.S3)
+			}
+			Camarilla struct {
+				Middle float64 // Camarilla Pivot Middle (Pivot.M.Camarilla.Middle)
+				R1     float64 // Resistance 1 (Pivot.M.Camarilla.R1)
+				R2     float64 // Resistance 2 (Pivot.M.Camarilla.R2)
+				R3     float64 // Resistance 3 (Pivot.M.Camarilla.R3)
+				S1     float64 // Support 1 (Pivot.M.Camarilla.S1)
+				S2     float64 // Support 2 (Pivot.M.Camarilla.S2)
+				S3     float64 // Support 3 (Pivot.M.Camarilla.S3)
+			}
+			Woodie struct {
+				Middle float64 // Woodie Pivot Middle (Pivot.M.Woodie.Middle)
+				R1     float64 // Resistance 1 (Pivot.M.Woodie.R1)
+				R2     float64 // Resistance 2 (Pivot.M.Woodie.R2)
+				R3     float64 // Resistance 3 (Pivot.M.Woodie.R3)
+				S1     float64 // Support 1 (Pivot.M.Woodie.S1)
+				S2     float64 // Support 2 (Pivot.M.Woodie.S2)
+				S3     float64 // Support 3 (Pivot.M.Woodie.S3)
+			}
+			Demark struct {
+				Middle float64 // Demark Pivot Middle (Pivot.M.Demark.Middle)
+				R1     float64 // Resistance 1 (Pivot.M.Demark.R1)
+				S1     float64 // Support 1 (Pivot.M.Demark.S1)
+			}
+		}
+		Prices struct {
+			Close float64 // Closing price
+			High  float64 // Highest price
+			Low   float64 // Lowest price
+		}
 	}
 }
 
-// Get - format TradingView's Scanner Post Data
+// Get formats and sends a GET request to TradingView's scanner to retrieve market data
+// for a given symbol and timeframe.
 //
-// symbol string – Name of EXCHANGE:SYMBOL (ex: "BINANCE:BTCUSDT" or "BINANCE:ETHUSDT")
+// The symbol should be in the format "EXCHANGE:SYMBOL" (e.g., "BINANCE:BTCUSDT").
+// The interval parameter defines the timeframe (e.g., "1min", "5min", "1hour", etc.).
 //
-// interval string - Interval / Timeframe
-func (t *TradingView) Get(symbol string, interval string) error {
-	// Parameters validation
+// Parameters:
+//
+//	symbol  - string: the exchange and symbol in the format "EXCHANGE:SYMBOL".
+//	interval - string: the timeframe/interval for the data.
+//
+// Returns:
+//
+//	error - returns an error if the request fails or the symbol/interval is invalid.
+func (ta *TradingView) Get(symbol string, interval string) error {
+	// Validate symbol parameter to ensure it has the correct format EXCHANGE:SYMBOL
 	if strings.Count(symbol, ":") != 1 {
 		return errors.New("symbol parameter is not valid")
 	}
 
+	// Map interval input to appropriate TradingView format
 	var dataInterval string
 	switch interval {
-	case Interval1min:
-		//  1 Minute
-		dataInterval = "1"
-	case Interval5min:
-		//  5 Minutes
-		dataInterval = "5"
-	case Interval15min:
-		//  15 Minutes
-		dataInterval = "15"
-	case Interval30min:
-		//  30 Minutes
-		dataInterval = "30"
-	case Interval1hour:
-		//  1 Hour
-		dataInterval = "60"
-	case Interval2hour:
-		//  2 Hours
-		dataInterval = "120"
-	case Interval4hour:
-		//  4 Hour
-		dataInterval = "240"
-	case Interval1week:
-		//  1 Week
-		dataInterval = "1W"
-	case Interval1month:
-		//  1 Month
-		dataInterval = "1M"
-	default: // Default 1 day
-		dataInterval = Interval1day
+	case Interval1min: // 1 minute
+		dataInterval = "|1"
+	case Interval5min: // 5 minutes
+		dataInterval = "|5"
+	case Interval15min: // 15 minutes
+		dataInterval = "|15"
+	case Interval30min: // 30 minutes
+		dataInterval = "|30"
+	case Interval1hour: // 1 hour
+		dataInterval = "|60"
+	case Interval2hour: // 2 hours
+		dataInterval = "|120"
+	case Interval4hour: // 4 hours
+		dataInterval = "|240"
+	case Interval1day: // 1 day
+		dataInterval = ""
+	case Interval1week: // 1 week
+		dataInterval = "|1W"
+	case Interval1month: // 1 month
+		dataInterval = "|1M"
+	default: // 1 day
+		dataInterval = ""
 	}
 
-	// Request preparation
-	type Request struct {
-		Symbols struct {
-			Tickers []string `json:"tickers"`
-		} `json:"symbols"`
-		Columns []string `json:"columns"`
-	}
-	data := Request{}
-	data.Symbols.Tickers = []string{symbol}
-	data.Columns = []string{
-		fmt.Sprintf("Recommend.All|%s", dataInterval),
-		fmt.Sprintf("Recommend.Other|%s", dataInterval),
-		fmt.Sprintf("Recommend.MA|%s", dataInterval),
-		fmt.Sprintf("RSI|%s", dataInterval),
-		fmt.Sprintf("RSI[1]|%s", dataInterval),
-		fmt.Sprintf("Stoch.K|%s", dataInterval),
-		fmt.Sprintf("Stoch.D|%s", dataInterval),
-		fmt.Sprintf("Stoch.K[1]|%s", dataInterval),
-		fmt.Sprintf("Stoch.D[1]|%s", dataInterval),
-		fmt.Sprintf("CCI20|%s", dataInterval),
-		fmt.Sprintf("CCI20[1]|%s", dataInterval),
-		fmt.Sprintf("ADX|%s", dataInterval),
-		fmt.Sprintf("ADX+DI|%s", dataInterval),
-		fmt.Sprintf("ADX-DI|%s", dataInterval),
-		fmt.Sprintf("ADX+DI[1]|%s", dataInterval),
-		fmt.Sprintf("ADX-DI[1]|%s", dataInterval),
-		fmt.Sprintf("AO|%s", dataInterval),
-		fmt.Sprintf("AO[1]|%s", dataInterval),
-		fmt.Sprintf("Mom|%s", dataInterval),
-		fmt.Sprintf("Mom[1]|%s", dataInterval),
-		fmt.Sprintf("MACD.macd|%s", dataInterval),
-		fmt.Sprintf("MACD.signal|%s", dataInterval),
-		fmt.Sprintf("Rec.Stoch.RSI|%s", dataInterval),
-		fmt.Sprintf("Stoch.RSI.K|%s", dataInterval),
-		fmt.Sprintf("Rec.WR|%s", dataInterval),
-		fmt.Sprintf("W.R|%s", dataInterval),
-		fmt.Sprintf("Rec.BBPower|%s", dataInterval),
-		fmt.Sprintf("BBPower|%s", dataInterval),
-		fmt.Sprintf("Rec.UO|%s", dataInterval),
-		fmt.Sprintf("UO|%s", dataInterval),
-		fmt.Sprintf("close|%s", dataInterval),
-		fmt.Sprintf("EMA5|%s", dataInterval),
-		fmt.Sprintf("SMA5|%s", dataInterval),
-		fmt.Sprintf("EMA10|%s", dataInterval),
-		fmt.Sprintf("SMA10|%s", dataInterval),
-		fmt.Sprintf("EMA20|%s", dataInterval),
-		fmt.Sprintf("SMA20|%s", dataInterval),
-		fmt.Sprintf("EMA30|%s", dataInterval),
-		fmt.Sprintf("SMA30|%s", dataInterval),
-		fmt.Sprintf("EMA50|%s", dataInterval),
-		fmt.Sprintf("SMA50|%s", dataInterval),
-		fmt.Sprintf("EMA100|%s", dataInterval),
-		fmt.Sprintf("SMA100|%s", dataInterval),
-		fmt.Sprintf("EMA200|%s", dataInterval),
-		fmt.Sprintf("SMA200|%s", dataInterval),
-		fmt.Sprintf("Rec.Ichimoku|%s", dataInterval),
-		fmt.Sprintf("Ichimoku.BLine|%s", dataInterval),
-		fmt.Sprintf("Rec.VWMA|%s", dataInterval),
-		fmt.Sprintf("VWMA|%s", dataInterval),
-		fmt.Sprintf("Rec.HullMA9|%s", dataInterval),
-		fmt.Sprintf("HullMA9|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.S3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.S2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.S1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.Middle|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.R1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.R2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Classic.R3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.S3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.S2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.S1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.Middle|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.R1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.R2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Fibonacci.R3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.S3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.S2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.S1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.Middle|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.R1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.R2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Camarilla.R3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.S3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.S2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.S1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.Middle|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.R1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.R2|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Woodie.R3|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Demark.S1|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Demark.Middle|%s", dataInterval),
-		fmt.Sprintf("Pivot.M.Demark.R1|%s", dataInterval),
-		fmt.Sprintf("open|%s", dataInterval),
-		fmt.Sprintf("P.SAR|%s", dataInterval),
-		fmt.Sprintf("BB.lower|%s", dataInterval),
-		fmt.Sprintf("BB.upper|%s", dataInterval),
-		fmt.Sprintf("AO[2]|%s", dataInterval),
-		fmt.Sprintf("volume|%s", dataInterval),
-		fmt.Sprintf("change|%s", dataInterval),
-		fmt.Sprintf("low|%s", dataInterval),
-		fmt.Sprintf("high|%s", dataInterval),
+	// Construct the fields array which includes technical indicators for the specified interval
+	fields := []string{
+		fmt.Sprintf("Recommend.All%s", dataInterval),
+		fmt.Sprintf("Recommend.Other%s", dataInterval),
+		fmt.Sprintf("Recommend.MA%s", dataInterval),
+		fmt.Sprintf("RSI%s", dataInterval),
+		fmt.Sprintf("RSI[1]%s", dataInterval),
+		fmt.Sprintf("Stoch.K%s", dataInterval),
+		fmt.Sprintf("Stoch.D%s", dataInterval),
+		fmt.Sprintf("Stoch.K[1]%s", dataInterval),
+		fmt.Sprintf("Stoch.D[1]%s", dataInterval),
+		fmt.Sprintf("CCI20%s", dataInterval),
+		fmt.Sprintf("CCI20[1]%s", dataInterval),
+		fmt.Sprintf("ADX%s", dataInterval),
+		fmt.Sprintf("ADX+DI%s", dataInterval),
+		fmt.Sprintf("ADX-DI%s", dataInterval),
+		fmt.Sprintf("ADX+DI[1]%s", dataInterval),
+		fmt.Sprintf("ADX-DI[1]%s", dataInterval),
+		fmt.Sprintf("AO%s", dataInterval),
+		fmt.Sprintf("AO[1]%s", dataInterval),
+		fmt.Sprintf("AO[2]%s", dataInterval),
+		fmt.Sprintf("MACD.macd%s", dataInterval),
+		fmt.Sprintf("MACD.signal%s", dataInterval),
+		fmt.Sprintf("Mom%s", dataInterval),
+		fmt.Sprintf("Mom[1]%s", dataInterval),
+		fmt.Sprintf("Rec.Stoch.RSI%s", dataInterval),
+		fmt.Sprintf("Stoch.RSI.K%s", dataInterval),
+		fmt.Sprintf("Rec.WR%s", dataInterval),
+		fmt.Sprintf("W.R%s", dataInterval),
+		fmt.Sprintf("Rec.BBPower%s", dataInterval),
+		fmt.Sprintf("BBPower%s", dataInterval),
+		fmt.Sprintf("Rec.UO%s", dataInterval),
+		fmt.Sprintf("UO%s", dataInterval),
+		fmt.Sprintf("EMA10%s", dataInterval),
+		fmt.Sprintf("SMA10%s", dataInterval),
+		fmt.Sprintf("EMA20%s", dataInterval),
+		fmt.Sprintf("SMA20%s", dataInterval),
+		fmt.Sprintf("EMA30%s", dataInterval),
+		fmt.Sprintf("SMA30%s", dataInterval),
+		fmt.Sprintf("EMA50%s", dataInterval),
+		fmt.Sprintf("SMA50%s", dataInterval),
+		fmt.Sprintf("EMA100%s", dataInterval),
+		fmt.Sprintf("SMA100%s", dataInterval),
+		fmt.Sprintf("EMA200%s", dataInterval),
+		fmt.Sprintf("SMA200%s", dataInterval),
+		fmt.Sprintf("Rec.Ichimoku%s", dataInterval),
+		fmt.Sprintf("Ichimoku.BLine%s", dataInterval),
+		fmt.Sprintf("Rec.VWMA%s", dataInterval),
+		fmt.Sprintf("VWMA%s", dataInterval),
+		fmt.Sprintf("Rec.HullMA9%s", dataInterval),
+		fmt.Sprintf("HullMA9%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.S3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.S2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.S1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.Middle%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.R1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.R2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Classic.R3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.S3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.S2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.S1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.Middle%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.R1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.R2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Fibonacci.R3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.S3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.S2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.S1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.Middle%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.R1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.R2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Camarilla.R3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.S3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.S2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.S1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.Middle%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.R1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.R2%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Woodie.R3%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Demark.S1%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Demark.Middle%s", dataInterval),
+		fmt.Sprintf("Pivot.M.Demark.R1%s", dataInterval),
+		fmt.Sprintf("close%s", dataInterval),
+		fmt.Sprintf("high%s", dataInterval),
+		fmt.Sprintf("low%s", dataInterval),
 	}
 
-	bytes, _ := json.Marshal(data)
-	payload := string(bytes)
+	// Build the URL for GET request by encoding the parameters
+	baseURL := "https://scanner.tradingview.com/symbol?"
+	params := url.Values{}
+	params.Add("symbol", symbol)
+	params.Add("fields", strings.Join(fields, ","))
 
+	// Full URL for GET request
+	reqURL := baseURL + params.Encode()
+
+	fmt.Println(reqURL)
+
+	// Create HTTP client and request
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", "https://scanner.tradingview.com/crypto/scan", strings.NewReader(payload))
+	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
-		return errors.New(err.Error())
+		return errors.New("failed to create request: " + err.Error())
 	}
 
-	// Headers
+	// Set request headers
 	req.Header.Add("Content-Type", "application/json")
 
+	// Execute the GET request
 	res, err := client.Do(req)
 	if err != nil {
-		return errors.New(err.Error())
+		return errors.New("failed to send request: " + err.Error())
 	}
 	defer res.Body.Close()
 
+	// Read the response body
 	jsonData, err := io.ReadAll(res.Body)
 	if err != nil {
-		return errors.New(err.Error())
+		return errors.New("failed to read response: " + err.Error())
 	}
 
-	// Indicators data
-	type Indicators struct {
-		TotalCount int `json:"totalCount"`
-		Data       []struct {
-			S string    `json:"s"`
-			D []float64 `json:"d"`
-		} `json:"data"`
-	}
-
-	inds := Indicators{}
-	err = json.Unmarshal(jsonData, &inds)
+	// Unmarshal the JSON data into a map
+	responseMap := make(map[string]float64)
+	err = json.Unmarshal(jsonData, &responseMap)
 	if err != nil {
-		return errors.New(err.Error())
-	}
-
-	// Data not received
-	if inds.TotalCount == 0 {
-		return errors.New("data not received")
+		return errors.New("failed to parse response: " + err.Error())
 	}
 
 	// Recommendations
-	t.Recommend.Summary = tvComputeRecommend(inds.Data[0].D[0])
-	t.Recommend.Oscillators = tvComputeRecommend(inds.Data[0].D[1])
-	t.Recommend.MA = tvComputeRecommend(inds.Data[0].D[2])
+	// Summary recommendation
+	ta.Recommend.Global.Summary = tvComputeRecommend(responseMap[fmt.Sprintf("Recommend.All%s", dataInterval)])
+	ta.Value.Global.Summary = responseMap[fmt.Sprintf("Recommend.All%s", dataInterval)]
+
+	// Oscillators recommendation
+	ta.Recommend.Global.Oscillators = tvComputeRecommend(responseMap[fmt.Sprintf("Recommend.Other%s", dataInterval)])
+	ta.Value.Global.Oscillators = responseMap[fmt.Sprintf("Recommend.Other%s", dataInterval)]
+
+	// Moving Averages recommendation
+	ta.Recommend.Global.MA = tvComputeRecommend(responseMap[fmt.Sprintf("Recommend.MA%s", dataInterval)])
+	ta.Value.Global.MA = responseMap[fmt.Sprintf("Recommend.MA%s", dataInterval)]
 
 	// Oscillators
 	// Relative Strength Index (14)
-	t.Oscillators.RSI = tvRsi(inds.Data[0].D[3], inds.Data[0].D[4])
+	ta.Recommend.Oscillators.RSI = tvRsi(responseMap[fmt.Sprintf("RSI%s", dataInterval)], responseMap[fmt.Sprintf("RSI[1]%s", dataInterval)])
+	ta.Value.Oscillators.RSI = responseMap[fmt.Sprintf("RSI%s", dataInterval)]
 
 	// Stochastic %K (14, 3, 3)
-	t.Oscillators.StochK = tvStoch(inds.Data[0].D[5], inds.Data[0].D[6], inds.Data[0].D[7], inds.Data[0].D[7])
+	ta.Recommend.Oscillators.StochK = tvStoch(responseMap[fmt.Sprintf("Stoch.K%s", dataInterval)], responseMap[fmt.Sprintf("Stoch.D%s", dataInterval)], responseMap[fmt.Sprintf("Stoch.K[1]%s", dataInterval)], responseMap[fmt.Sprintf("Stoch.D[1]%s", dataInterval)])
+	ta.Value.Oscillators.StochK = responseMap[fmt.Sprintf("Stoch.K%s", dataInterval)]
 
 	// Commodity Channel Index (20)
-	t.Oscillators.CCI = tvCci20(inds.Data[0].D[9], inds.Data[0].D[10])
+	ta.Recommend.Oscillators.CCI = tvCci20(responseMap[fmt.Sprintf("CCI20%s", dataInterval)], responseMap[fmt.Sprintf("CCI20[1]%s", dataInterval)])
+	ta.Value.Oscillators.CCI = responseMap[fmt.Sprintf("CCI20%s", dataInterval)]
 
 	// Average Directional Index (14)
-	t.Oscillators.ADX = tvAdx(inds.Data[0].D[11], inds.Data[0].D[12], inds.Data[0].D[13], inds.Data[0].D[14], inds.Data[0].D[15])
+	ta.Recommend.Oscillators.ADX = tvAdx(responseMap[fmt.Sprintf("ADX%s", dataInterval)], responseMap[fmt.Sprintf("ADX+DI%s", dataInterval)], responseMap[fmt.Sprintf("ADX+DI%s", dataInterval)], responseMap[fmt.Sprintf("ADX+DI[1]%s", dataInterval)], responseMap[fmt.Sprintf("ADX-DI[1]%s", dataInterval)])
+	ta.Value.Oscillators.ADX.Value = responseMap[fmt.Sprintf("ADX%s", dataInterval)]          // ADX Value
+	ta.Value.Oscillators.ADX.PlusDI = responseMap[fmt.Sprintf("ADX+DI%s", dataInterval)]      // ADX +DI
+	ta.Value.Oscillators.ADX.MinusDI = responseMap[fmt.Sprintf("ADX-DI%s", dataInterval)]     // ADX -DI
+	ta.Value.Oscillators.ADX.PlusDI1 = responseMap[fmt.Sprintf("ADX+DI[1]%s", dataInterval)]  // ADX +DI[1]
+	ta.Value.Oscillators.ADX.MinusDI1 = responseMap[fmt.Sprintf("ADX-DI[1]%s", dataInterval)] // ADX -DI[1]
 
 	// Awesome Oscillator
-	t.Oscillators.AO = tvAo(inds.Data[0].D[16], inds.Data[0].D[17], inds.Data[0].D[86])
+	ta.Recommend.Oscillators.AO = tvAo(responseMap[fmt.Sprintf("AO%s", dataInterval)], responseMap[fmt.Sprintf("AO[1]%s", dataInterval)], responseMap[fmt.Sprintf("AO[2]%s", dataInterval)])
+	ta.Value.Oscillators.AO.Value = responseMap[fmt.Sprintf("AO%s", dataInterval)]    // AO current value
+	ta.Value.Oscillators.AO.Prev1 = responseMap[fmt.Sprintf("AO[1]%s", dataInterval)] // AO previous 1 value
+	ta.Value.Oscillators.AO.Prev2 = responseMap[fmt.Sprintf("AO[2]%s", dataInterval)] // AO previous 2 value
 
 	// Momentum (10)
-	t.Oscillators.Mom = tvMom(inds.Data[0].D[18], inds.Data[0].D[19])
+	ta.Recommend.Oscillators.Mom = tvMom(responseMap[fmt.Sprintf("Mom%s", dataInterval)], responseMap[fmt.Sprintf("Mom[1]%s", dataInterval)])
+	ta.Value.Oscillators.Mom = responseMap[fmt.Sprintf("Mom%s", dataInterval)]
 
 	// MACD Level (12, 26)
-	t.Oscillators.MACD = tvMacd(inds.Data[0].D[20], inds.Data[0].D[21])
+	ta.Recommend.Oscillators.MACD = tvMacd(responseMap[fmt.Sprintf("MACD.macd%s", dataInterval)], responseMap[fmt.Sprintf("MACD.signal%s", dataInterval)])
+	ta.Value.Oscillators.MACD.Macd = responseMap[fmt.Sprintf("MACD.macd%s", dataInterval)]     // MACD line
+	ta.Value.Oscillators.MACD.Signal = responseMap[fmt.Sprintf("MACD.signal%s", dataInterval)] // Signal line
 
 	// Stochastic RSI Fast (3, 3, 14, 14)
-	t.Oscillators.StochRSI = tvSimple(inds.Data[0].D[22])
+	ta.Recommend.Oscillators.StochRSI = tvSimple(responseMap[fmt.Sprintf("Rec.Stoch.RSI%s", dataInterval)])
+	ta.Value.Oscillators.StochRSI = responseMap[fmt.Sprintf("Stoch.RSI.K%s", dataInterval)]
 
 	// Williams Percent Range (14)
-	t.Oscillators.WR = tvSimple(inds.Data[0].D[24])
+	ta.Recommend.Oscillators.WR = tvSimple(responseMap[fmt.Sprintf("Rec.WR%s", dataInterval)])
+	ta.Value.Oscillators.WR = responseMap[fmt.Sprintf("W.R%s", dataInterval)]
 
 	// Bull Bear Power
-	t.Oscillators.BBP = tvSimple(inds.Data[0].D[26])
+	ta.Recommend.Oscillators.BBP = tvSimple(responseMap[fmt.Sprintf("Rec.BBPower%s", dataInterval)])
+	ta.Value.Oscillators.BBP = responseMap[fmt.Sprintf("BBPower%s", dataInterval)]
 
 	// Ultimate Oscillator (7, 14, 28)
-	t.Oscillators.UO = tvSimple(inds.Data[0].D[28])
+	ta.Recommend.Oscillators.UO = tvSimple(responseMap[fmt.Sprintf("Rec.UO%s", dataInterval)])
+	ta.Value.Oscillators.UO = responseMap[fmt.Sprintf("UO%s", dataInterval)]
 
 	// Moving Averages
-	for i := 33; i < 45; i++ {
-		switch i {
-		case 33:
-			// Exponential Moving Average (10)
-			t.MovingAverages.EMA10 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 34:
-			// Simple Moving Average (10)
-			t.MovingAverages.SMA10 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 35:
-			// Exponential Moving Average (20)
-			t.MovingAverages.EMA20 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 36:
-			// Simple Moving Average (20)
-			t.MovingAverages.SMA20 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 37:
-			// Exponential Moving Average (30)
-			t.MovingAverages.EMA30 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 38:
-			// Simple Moving Average (30)
-			t.MovingAverages.SMA30 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 39:
-			// Exponential Moving Average (50)
-			t.MovingAverages.EMA50 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 40:
-			// Simple Moving Average (50)
-			t.MovingAverages.SMA50 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 41:
-			// Exponential Moving Average (100)
-			t.MovingAverages.EMA100 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 42:
-			// Simple Moving Average (100)
-			t.MovingAverages.SMA100 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 43:
-			// Exponential Moving Average (200)
-			t.MovingAverages.EMA200 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		case 44:
-			// Simple Moving Average (200)
-			t.MovingAverages.SMA200 = tvMa(inds.Data[0].D[i], inds.Data[0].D[30])
-		}
-	}
+	// Exponential Moving Average (EMA)
+	ta.Recommend.MovingAverages.EMA10 = tvMa(responseMap[fmt.Sprintf("EMA10%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.EMA10 = responseMap[fmt.Sprintf("EMA10%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.EMA20 = tvMa(responseMap[fmt.Sprintf("EMA20%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.EMA20 = responseMap[fmt.Sprintf("EMA20%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.EMA30 = tvMa(responseMap[fmt.Sprintf("EMA30%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.EMA30 = responseMap[fmt.Sprintf("EMA30%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.EMA50 = tvMa(responseMap[fmt.Sprintf("EMA50%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.EMA50 = responseMap[fmt.Sprintf("EMA50%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.EMA100 = tvMa(responseMap[fmt.Sprintf("EMA100%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.EMA100 = responseMap[fmt.Sprintf("EMA100%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.EMA200 = tvMa(responseMap[fmt.Sprintf("EMA200%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.EMA200 = responseMap[fmt.Sprintf("EMA200%s", dataInterval)]
+
+	// Simple Moving Average (SMA)
+	ta.Recommend.MovingAverages.SMA10 = tvMa(responseMap[fmt.Sprintf("SMA10%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.SMA10 = responseMap[fmt.Sprintf("SMA10%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.SMA20 = tvMa(responseMap[fmt.Sprintf("SMA20%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.SMA20 = responseMap[fmt.Sprintf("SMA20%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.SMA30 = tvMa(responseMap[fmt.Sprintf("SMA30%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.SMA30 = responseMap[fmt.Sprintf("SMA30%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.SMA50 = tvMa(responseMap[fmt.Sprintf("SMA50%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.SMA50 = responseMap[fmt.Sprintf("SMA50%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.SMA100 = tvMa(responseMap[fmt.Sprintf("SMA100%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.SMA100 = responseMap[fmt.Sprintf("SMA100%s", dataInterval)]
+
+	ta.Recommend.MovingAverages.SMA200 = tvMa(responseMap[fmt.Sprintf("SMA200%s", dataInterval)], responseMap[fmt.Sprintf("close%s", dataInterval)])
+	ta.Value.MovingAverages.SMA200 = responseMap[fmt.Sprintf("SMA200%s", dataInterval)]
 
 	// Ichimoku Base Line (9, 26, 52, 26)
-	t.MovingAverages.Ichimoku = tvSimple(inds.Data[0].D[45])
+	ta.Recommend.MovingAverages.Ichimoku = tvSimple(responseMap[fmt.Sprintf("Rec.Ichimoku%s", dataInterval)])
+	ta.Value.MovingAverages.Ichimoku = responseMap[fmt.Sprintf("Ichimoku.BLine%s", dataInterval)]
 
 	// Volume Weighted Moving Average (20)
-	t.MovingAverages.VWMA = tvSimple(inds.Data[0].D[47])
+	ta.Recommend.MovingAverages.VWMA = tvSimple(responseMap[fmt.Sprintf("Rec.VWMA%s", dataInterval)])
+	ta.Value.MovingAverages.VWMA = responseMap[fmt.Sprintf("VWMA%s", dataInterval)]
 
 	// Hull Moving Average (9)
-	t.MovingAverages.HullMA = tvSimple(inds.Data[0].D[49])
+	ta.Recommend.MovingAverages.HullMA = tvSimple(responseMap[fmt.Sprintf("Rec.HullMA9%s", dataInterval)])
+	ta.Value.MovingAverages.HullMA = responseMap[fmt.Sprintf("HullMA9%s", dataInterval)]
+
+	// Pivots
+	// Pivots - Classic
+	ta.Value.Pivots.Classic.Middle = responseMap[fmt.Sprintf("Pivot.M.Classic.Middle%s", dataInterval)]
+	ta.Value.Pivots.Classic.R1 = responseMap[fmt.Sprintf("Pivot.M.Classic.R1%s", dataInterval)]
+	ta.Value.Pivots.Classic.R2 = responseMap[fmt.Sprintf("Pivot.M.Classic.R2%s", dataInterval)]
+	ta.Value.Pivots.Classic.R3 = responseMap[fmt.Sprintf("Pivot.M.Classic.R3%s", dataInterval)]
+	ta.Value.Pivots.Classic.S1 = responseMap[fmt.Sprintf("Pivot.M.Classic.S1%s", dataInterval)]
+	ta.Value.Pivots.Classic.S2 = responseMap[fmt.Sprintf("Pivot.M.Classic.S2%s", dataInterval)]
+	ta.Value.Pivots.Classic.S3 = responseMap[fmt.Sprintf("Pivot.M.Classic.S3%s", dataInterval)]
+
+	// Pivots - Fibonacci
+	ta.Value.Pivots.Fibonacci.Middle = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.Middle%s", dataInterval)]
+	ta.Value.Pivots.Fibonacci.R1 = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.R1%s", dataInterval)]
+	ta.Value.Pivots.Fibonacci.R2 = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.R2%s", dataInterval)]
+	ta.Value.Pivots.Fibonacci.R3 = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.R3%s", dataInterval)]
+	ta.Value.Pivots.Fibonacci.S1 = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.S1%s", dataInterval)]
+	ta.Value.Pivots.Fibonacci.S2 = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.S2%s", dataInterval)]
+	ta.Value.Pivots.Fibonacci.S3 = responseMap[fmt.Sprintf("Pivot.M.Fibonacci.S3%s", dataInterval)]
+
+	// Pivots - Camarilla
+	ta.Value.Pivots.Camarilla.Middle = responseMap[fmt.Sprintf("Pivot.M.Camarilla.Middle%s", dataInterval)]
+	ta.Value.Pivots.Camarilla.R1 = responseMap[fmt.Sprintf("Pivot.M.Camarilla.R1%s", dataInterval)]
+	ta.Value.Pivots.Camarilla.R2 = responseMap[fmt.Sprintf("Pivot.M.Camarilla.R2%s", dataInterval)]
+	ta.Value.Pivots.Camarilla.R3 = responseMap[fmt.Sprintf("Pivot.M.Camarilla.R3%s", dataInterval)]
+	ta.Value.Pivots.Camarilla.S1 = responseMap[fmt.Sprintf("Pivot.M.Camarilla.S1%s", dataInterval)]
+	ta.Value.Pivots.Camarilla.S2 = responseMap[fmt.Sprintf("Pivot.M.Camarilla.S2%s", dataInterval)]
+	ta.Value.Pivots.Camarilla.S3 = responseMap[fmt.Sprintf("Pivot.M.Camarilla.S3%s", dataInterval)]
+
+	// Pivots - Woodie
+	ta.Value.Pivots.Woodie.Middle = responseMap[fmt.Sprintf("Pivot.M.Woodie.Middle%s", dataInterval)]
+	ta.Value.Pivots.Woodie.R1 = responseMap[fmt.Sprintf("Pivot.M.Woodie.R1%s", dataInterval)]
+	ta.Value.Pivots.Woodie.R2 = responseMap[fmt.Sprintf("Pivot.M.Woodie.R2%s", dataInterval)]
+	ta.Value.Pivots.Woodie.R3 = responseMap[fmt.Sprintf("Pivot.M.Woodie.R3%s", dataInterval)]
+	ta.Value.Pivots.Woodie.S1 = responseMap[fmt.Sprintf("Pivot.M.Woodie.S1%s", dataInterval)]
+	ta.Value.Pivots.Woodie.S2 = responseMap[fmt.Sprintf("Pivot.M.Woodie.S2%s", dataInterval)]
+	ta.Value.Pivots.Woodie.S3 = responseMap[fmt.Sprintf("Pivot.M.Woodie.S3%s", dataInterval)]
+
+	// Pivots - Demark
+	ta.Value.Pivots.Demark.Middle = responseMap[fmt.Sprintf("Pivot.M.Demark.Middle%s", dataInterval)]
+	ta.Value.Pivots.Demark.R1 = responseMap[fmt.Sprintf("Pivot.M.Demark.R1%s", dataInterval)]
+	ta.Value.Pivots.Demark.S1 = responseMap[fmt.Sprintf("Pivot.M.Demark.S1%s", dataInterval)]
+
+	// Prices
+	ta.Value.Prices.Close = responseMap[fmt.Sprintf("close%s", dataInterval)]
+	ta.Value.Prices.High = responseMap[fmt.Sprintf("high%s", dataInterval)]
+	ta.Value.Prices.Low = responseMap[fmt.Sprintf("low%s", dataInterval)]
 
 	return nil
 }

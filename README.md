@@ -8,23 +8,23 @@ An unofficial Go API simple wrapper to retrieve technical analysis from TradingV
 
 ```go
 const (
-    // Intervals
-    Interval1min   string = "1min"
-    Interval5min   string = "5min"
-    Interval15min  string = "15min"
-    Interval30min  string = "30min"
-    Interval1hour  string = "1hour"
-    Interval2hour  string = "2hour"
-    Interval4hour  string = "4hour"
-    Interval1day   string = "1day"
-    Interval1week  string = "1week"
-    Interval1month string = "1month"
+	// Intervals
+	Interval1Min   string = "1"   // 1 minute
+	Interval5Min   string = "5"   // 5 minutes
+	Interval15Min  string = "15"  // 15 minutes
+	Interval30Min  string = "30"  // 30 minutes
+	Interval1Hour  string = "60"  // 1 hour
+	Interval2Hour  string = "120" // 2 hours
+	Interval4Hour  string = "240" // 4 hours
+	Interval1Day   string = "1D"  // 1 day
+	Interval1Week  string = "1W"  // 1 week
+	Interval1Month string = "1M"  // 1 month
 
-    SignalStrongBuy  int = 2  // STRONG_BUY
-    SignalBuy        int = 1  // BUY
-    SignalNeutral    int = 0  // NEUTRAL
-    SignalSell       int = -1 // SELL
-    SignalStrongSell int = -2 // STRONG_SELL
+	SignalStrongBuy  int = 2  // STRONG_BUY
+	SignalBuy        int = 1  // BUY
+	SignalNeutral    int = 0  // NEUTRAL
+	SignalSell       int = -1 // SELL
+	SignalStrongSell int = -2 // STRONG_SELL
 )
 
 ```
@@ -42,21 +42,15 @@ import (
 
 func main() {
 	var ta tradingview.TradingView
-	err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4hour)
+	err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4Hour)
 	if err != nil {
 		fmt.Println(err)
 	}
 	fmt.Printf("%#v\n", ta) // Full Data
 
-	// Get the value by key
-	recSummary := ta.Recommend.Summary // Summary
+	// Summary recommendation
+	recSummary := ta.Recommend.Global.Summary
 	fmt.Println(recSummary)
-
-	recOsc := ta.Recommend.Oscillators // Oscillators
-	fmt.Println(recOsc)
-
-	recMA := ta.Recommend.MA // Moving Averages
-	fmt.Println(recMA)
 
 	// Text recommendation
 	switch recSummary {
@@ -73,6 +67,10 @@ func main() {
 	default:
 		fmt.Println("An error has occurred")
 	}
+
+	// Ichimoku Base Line (9, 26, 52, 26)
+	ichimoku := ta.Recommend.MovingAverages.Ichimoku 
+	fmt.Println(ichimoku)
 }
 
 ```
