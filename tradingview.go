@@ -1,6 +1,6 @@
 // Copyright 2022-2024. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// v1.3.0
+// v1.3.1
 
 package tradingview
 
@@ -326,8 +326,6 @@ func (ta *TradingView) Get(symbol string, interval string) error {
 
 	// Full URL for GET request
 	reqURL := baseURL + params.Encode()
-
-	fmt.Println(reqURL)
 
 	// Create HTTP client and request
 	client := &http.Client{}

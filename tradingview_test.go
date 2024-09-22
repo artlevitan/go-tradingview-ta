@@ -1,6 +1,6 @@
 // Copyright 2022-2024. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// v1.3.0
+// v1.3.1
 
 package tradingview
 

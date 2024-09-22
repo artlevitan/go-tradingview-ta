@@ -46,7 +46,7 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("%#v\n", ta) // Full Data
+	// fmt.Printf("%#v\n", ta) // Full Data
 
 	// Summary recommendation
 	recSummary := ta.Recommend.Global.Summary
