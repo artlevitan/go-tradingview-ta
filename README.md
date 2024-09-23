@@ -2,7 +2,7 @@
 
 An unofficial Go API simple wrapper to retrieve technical analysis from TradingView.
 
-<img src="/editor/images/promo.jpg" alt="Go TradingView" style="max-width:100%">
+<img src="/editor/images/promo.jpg" alt="TradingView Go" style="max-width:100%">
 
 ## Installation
 
