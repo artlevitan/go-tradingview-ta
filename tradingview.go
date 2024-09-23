@@ -32,17 +32,16 @@ const (
 	SignalSell       int = -1 // SELL
 	SignalStrongSell int = -2 // STRONG_SELL
 
-	// Deprecated
-	Interval1min   string = Interval1Min
-	Interval5min   string = Interval5Min
-	Interval15min  string = Interval15Min
-	Interval30min  string = Interval30Min
-	Interval1hour  string = Interval1Hour
-	Interval2hour  string = Interval2Hour
-	Interval4hour  string = Interval4Hour
-	Interval1day   string = Interval1Day
-	Interval1week  string = Interval1Week
-	Interval1month string = Interval1Month
+	Interval1min   = Interval1Min   // Deprecated
+	Interval5min   = Interval5Min   // Deprecated
+	Interval15min  = Interval15Min  // Deprecated
+	Interval30min  = Interval30Min  // Deprecated
+	Interval1hour  = Interval1Hour  // Deprecated
+	Interval2hour  = Interval2Hour  // Deprecated
+	Interval4hour  = Interval4Hour  // Deprecated
+	Interval1day   = Interval1Day   // Deprecated
+	Interval1week  = Interval1Week  // Deprecated
+	Interval1month = Interval1Month // Deprecated
 )
 
 // TradingView Payload Data
@@ -207,25 +206,25 @@ func (ta *TradingView) Get(symbol string, interval string) error {
 	// Map interval input to appropriate TradingView format
 	var dataInterval string
 	switch interval {
-	case Interval1min: // 1 minute
+	case Interval1Min: // 1 minute
 		dataInterval = "|1"
-	case Interval5min: // 5 minutes
+	case Interval5Min: // 5 minutes
 		dataInterval = "|5"
-	case Interval15min: // 15 minutes
+	case Interval15Min: // 15 minutes
 		dataInterval = "|15"
-	case Interval30min: // 30 minutes
+	case Interval30Min: // 30 minutes
 		dataInterval = "|30"
-	case Interval1hour: // 1 hour
+	case Interval1Hour: // 1 hour
 		dataInterval = "|60"
-	case Interval2hour: // 2 hours
+	case Interval2Hour: // 2 hours
 		dataInterval = "|120"
-	case Interval4hour: // 4 hours
+	case Interval4Hour: // 4 hours
 		dataInterval = "|240"
-	case Interval1day: // 1 day
+	case Interval1Day: // 1 day
 		dataInterval = ""
-	case Interval1week: // 1 week
+	case Interval1Week: // 1 week
 		dataInterval = "|1W"
-	case Interval1month: // 1 month
+	case Interval1Month: // 1 month
 		dataInterval = "|1M"
 	default: // 1 day
 		dataInterval = ""
