@@ -1,6 +1,6 @@
-// Copyright 2022-2024. All rights reserved.
+// Copyright 2022-2025. All rights reserved.
 // https://github.com/artlevitan/go-tradingview-ta
-// v1.3.2
+// v1.3.3
 
 package tradingview
 
@@ -31,17 +31,6 @@ const (
 	SignalNeutral    int = 0  // NEUTRAL
 	SignalSell       int = -1 // SELL
 	SignalStrongSell int = -2 // STRONG_SELL
-
-	Interval1min   = Interval1Min   // Deprecated
-	Interval5min   = Interval5Min   // Deprecated
-	Interval15min  = Interval15Min  // Deprecated
-	Interval30min  = Interval30Min  // Deprecated
-	Interval1hour  = Interval1Hour  // Deprecated
-	Interval2hour  = Interval2Hour  // Deprecated
-	Interval4hour  = Interval4Hour  // Deprecated
-	Interval1day   = Interval1Day   // Deprecated
-	Interval1week  = Interval1Week  // Deprecated
-	Interval1month = Interval1Month // Deprecated
 )
 
 // TradingView Payload Data
