@@ -1,4 +1,4 @@
-# go-tradingview-ta [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) ![Coverage](https://img.shields.io/badge/Coverage-97.2%25-brightgreen)
+# go-tradingview-ta [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) ![Coverage](https://img.shields.io/badge/Coverage-100.0%25-brightgreen)
 
 An unofficial Go API simple wrapper to retrieve technical analysis from TradingView.
 
