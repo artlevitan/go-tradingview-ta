@@ -11,9 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://pkg.go.dev/github.com/artlevitan/go-tradingview-ta">
-    <img src="https://pkg.go.dev/badge/github.com/artlevitan/go-tradingview-ta.svg" alt="Go Reference">
-  </a>
+  <a href="https://pkg.go.dev/github.com/artlevitan/go-tradingview-ta"><img src="https://pkg.go.dev/badge/github.com/artlevitan/go-tradingview-ta.svg" alt="Go Reference"></a>
   <img src="https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white" alt="Go 1.26">
   <img src="https://img.shields.io/badge/Coverage-100.0%25-brightgreen" alt="Coverage">
   <img src="https://img.shields.io/badge/License-MIT-black.svg" alt="MIT License">
