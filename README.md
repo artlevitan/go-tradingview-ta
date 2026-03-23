@@ -1,101 +1,121 @@
-# go-tradingview-ta [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) ![Coverage](https://img.shields.io/badge/Coverage-100.0%25-brightgreen)
+<p align="center">
+  <img src="editor/images/promo.jpg" alt="go-tradingview-ta" width="900">
+</p>
 
-An unofficial Go API simple wrapper to retrieve technical analysis from TradingView.
+<h1 align="center">go-tradingview-ta</h1>
 
-<img src="/editor/images/promo.jpg" alt="TradingView Go" style="max-width:100%">
+<p align="center">
+  A focused Go client for TradingView scanner data.
+  Fetch normalized recommendation signals and raw indicator values with a small,
+  idiomatic API.
+</p>
+
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/artlevitan/go-tradingview-ta">
+    <img src="https://pkg.go.dev/badge/github.com/artlevitan/go-tradingview-ta.svg" alt="Go Reference">
+  </a>
+  <img src="https://img.shields.io/badge/Go-1.26-00ADD8?logo=go&logoColor=white" alt="Go 1.26">
+  <img src="https://img.shields.io/badge/Coverage-100.0%25-brightgreen" alt="Coverage">
+  <img src="https://img.shields.io/badge/License-MIT-black.svg" alt="MIT License">
+</p>
+
+`go-tradingview-ta` is an unofficial Go client for TradingView's public scanner
+endpoint. It retrieves both normalized recommendation signals and the raw
+indicator values returned by TradingView.
+
+The zero values of `TradingView` and `Client` are ready to use.
+
+## Why This Package
+
+- Small API surface with an idiomatic Go layout.
+- Raw numeric values and normalized `Strong Sell` to `Strong Buy` signals.
+- Support for daily and intraday intervals.
+- Configurable HTTP client for tests, custom transports, and alternative endpoints.
 
 ## Installation
 
 ```bash
-go get github.com/artlevitan/go-tradingview-ta
+go get github.com/artlevitan/go-tradingview-ta@latest
 ```
 
-### Predefined constants
-
-```go
-const (
-	// Intervals
-	Interval1Min   string = "1"   // 1 minute
-	Interval5Min   string = "5"   // 5 minutes
-	Interval15Min  string = "15"  // 15 minutes
-	Interval30Min  string = "30"  // 30 minutes
-	Interval1Hour  string = "60"  // 1 hour
-	Interval2Hour  string = "120" // 2 hours
-	Interval4Hour  string = "240" // 4 hours
-	Interval1Day   string = "1D"  // 1 day
-	Interval1Week  string = "1W"  // 1 week
-	Interval1Month string = "1M"  // 1 month
-
-	SignalStrongBuy  int = 2  // STRONG_BUY
-	SignalBuy        int = 1  // BUY
-	SignalNeutral    int = 0  // NEUTRAL
-	SignalSell       int = -1 // SELL
-	SignalStrongSell int = -2 // STRONG_SELL
-)
-```
-
-## Example
+## Quick Start
 
 ```go
 package main
 
 import (
 	"fmt"
+	"log"
 
 	tradingview "github.com/artlevitan/go-tradingview-ta"
 )
 
-const SYMBOL = "BINANCE:BTCUSDT" // https://www.tradingview.com/symbols/BTCUSDT/technicals/
-
 func main() {
 	var ta tradingview.TradingView
-	
-	// Fetch data for the specified symbol at a 4-hour interval
-	err := ta.Get(SYMBOL, tradingview.Interval4Hour)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	
-	// Get the summary trading recommendation
-	recSummary := ta.Recommend.Global.Summary
 
-	// Print the recommendation based on the signal
-	switch recSummary {
-	case tradingview.SignalStrongSell:
-		fmt.Println("STRONG_SELL")
-	case tradingview.SignalSell:
-		fmt.Println("SELL")
-	case tradingview.SignalNeutral:
-		fmt.Println("NEUTRAL")
-	case tradingview.SignalBuy:
-		fmt.Println("BUY")
-	case tradingview.SignalStrongBuy:
-		fmt.Println("STRONG_BUY")
-	default:
-		fmt.Println("An error has occurred")
+	if err := ta.Get("BINANCE:BTCUSDT", tradingview.Interval4Hour); err != nil {
+		log.Fatal(err)
 	}
 
-	// Print the latest closing price
-	clPrice := ta.Value.Prices.Close
-	fmt.Println("Closing price:", clPrice)
+	fmt.Println("summary:", ta.Recommend.Global.Summary)
+	fmt.Println("close:", ta.Value.Prices.Close)
 }
 ```
 
-## Keywords
+The default entry point is `(*TradingView).Get`. For advanced use cases, use
+`Client` directly with a custom `HTTPClient` or `BaseURL`.
 
-- Go
-- Golang
-- TradingView
-- Technical Analysis
-- API
-- Trading
-- Financial Markets
-- Trading Signals
-- Trading Bot
-- Cryptocurrency
-- Stock Market
+`TradingView.Recommend` contains normalized recommendation signals:
+
+```go
+tradingview.SignalStrongSell
+tradingview.SignalSell
+tradingview.SignalNeutral
+tradingview.SignalBuy
+tradingview.SignalStrongBuy
+```
+
+`TradingView.Value` contains the raw numeric values returned by TradingView for
+the requested symbol and interval.
+
+For custom transports, tests, or alternative endpoints, use `tradingview.Client`
+directly.
+
+```go
+client := tradingview.Client{
+	HTTPClient: http.DefaultClient,
+}
+
+var ta tradingview.TradingView
+if err := client.Get(&ta, "BINANCE:BTCUSDT", tradingview.Interval1Hour); err != nil {
+	log.Fatal(err)
+}
+```
+
+## Features
+
+- TradingView-style recommendation buckets for summary, oscillators, and moving averages.
+- Raw values for RSI, Stoch, CCI20, ADX, AO, Momentum, MACD, pivots, moving averages, and price fields.
+- Public `Client` type for dependency injection and deterministic tests.
+- Lightweight package design that stays close to standard Go conventions.
+
+## Intervals
+
+```go
+tradingview.Interval1Min
+tradingview.Interval5Min
+tradingview.Interval15Min
+tradingview.Interval30Min
+tradingview.Interval1Hour
+tradingview.Interval2Hour
+tradingview.Interval4Hour
+tradingview.Interval1Day
+tradingview.Interval1Week
+tradingview.Interval1Month
+```
+
+An empty or unknown interval is treated as daily data.
 
 ## License
 
-MIT
+[MIT](LICENSE)
