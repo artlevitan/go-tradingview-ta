@@ -1,7 +1,7 @@
 // Copyright 2022-2026 The go-tradingview-ta Authors. All rights reserved.
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
-//
+
 // Package tradingview provides an unofficial Go client for TradingView's public
 // scanner endpoint.
 //

@@ -6,7 +6,7 @@ package tradingview
 
 import "time"
 
-// Supported interval values for Get.
+// Supported interval values for Get and GetContext.
 const (
 	// Interval1Min requests 1-minute data.
 	Interval1Min = "1"
@@ -67,8 +67,8 @@ type TradingView struct {
 
 // Metadata describes a successful scanner snapshot.
 type Metadata struct {
-	Symbol     string
-	Interval   string
+	Symbol     string    // Exchange-qualified symbol, such as "BINANCE:BTCUSDT".
+	Interval   string    // Normalized interval; an empty request is recorded as Interval1Day.
 	FetchedAt  time.Time // Time when the response was successfully decoded (UTC).
 	BarTime    time.Time // Opening time of the requested candle (UTC), or zero if unavailable.
 	UpdateMode string    // Scanner mode, e.g. "streaming" or "delayed_streaming_900".
@@ -136,7 +136,9 @@ type MovingAverageRecommendations struct {
 	HullMA   int // Hull Moving Average (HullMA9)
 }
 
-// Values groups raw numeric values returned by TradingView.
+// Values groups numeric values returned by TradingView.
+// Unavailable fields contain zero; use TradingView.HasValue or RawValues.Lookup
+// to distinguish them from genuine zero values.
 type Values struct {
 	// Global contains the raw combined recommendation values.
 	Global GlobalValues
@@ -215,11 +217,11 @@ type MovingAverageValues struct {
 
 // PivotValues stores pivot levels for the supported pivot systems.
 type PivotValues struct {
-	Classic   ClassicPivotLevels
-	Fibonacci FibonacciPivotLevels
-	Camarilla CamarillaPivotLevels
-	Woodie    WoodiePivotLevels
-	Demark    DemarkPivotLevels
+	Classic   ClassicPivotLevels   // Classic support, resistance, and central pivot levels.
+	Fibonacci FibonacciPivotLevels // Fibonacci support, resistance, and central pivot levels.
+	Camarilla CamarillaPivotLevels // Camarilla support, resistance, and central pivot levels.
+	Woodie    WoodiePivotLevels    // Woodie support, resistance, and central pivot levels.
+	Demark    DemarkPivotLevels    // DeMark support, resistance, and central pivot levels.
 }
 
 // ClassicPivotLevels stores Classic pivot levels.
@@ -273,7 +275,8 @@ type DemarkPivotLevels struct {
 	S1     float64 // Support 1 (Pivot.M.Demark.S1)
 }
 
-// PriceValues stores the close, high, and low values returned by TradingView.
+// PriceValues stores the requested candle's prices returned by TradingView.
+// The candle may still be open, in which case Close is its latest price.
 type PriceValues struct {
 	Close float64 // Closing price
 	High  float64 // Highest price

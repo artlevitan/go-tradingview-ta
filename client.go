@@ -44,6 +44,7 @@ type HTTPError struct {
 	RetryAfter string // Unparsed Retry-After header, if provided by the server.
 }
 
+// Error returns the response status and any available response body excerpt.
 func (e *HTTPError) Error() string {
 	message := fmt.Sprintf("tradingview: HTTP %d (%s)", e.StatusCode, http.StatusText(e.StatusCode))
 	if e.Body != "" {

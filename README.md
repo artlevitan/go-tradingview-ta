@@ -210,7 +210,10 @@ records the values and counts observed on the official technicals page.
 
 ## Tests
 
-Unit tests run without external network requests:
+Unit tests run without external network requests. The single JSON file in
+`testdata` is a recorded public scanner response used by the monthly regression
+test and as a fuzzing seed. It is required test input, not a generated artifact;
+Go excludes `testdata` directories from ordinary package discovery.
 
 ```bash
 go test ./...
@@ -220,7 +223,10 @@ go test -race -shuffle=on -coverprofile=coverage.out ./...
 go test -run '^$' -fuzz '^FuzzGetContext$' -fuzztime=10s -parallel=2 ./...
 ```
 
-Live checks for all ten supported BTCUSDT intervals, ETHUSDT, AAPL, and EURUSD
+Live checks cover every combination of the ten supported intervals with
+`BINANCE:BTCUSDT`, `COINBASE:BTCUSD`, `KRAKEN:ETHUSD`, `NASDAQ:AAPL`, `NYSE:IBM`,
+`XETR:SAP`, `OANDA:EURUSD`, and `FX_IDC:USDJPY` (80 combinations).
+An additional request verifies handling of a nonexistent symbol. These checks
 require public network access and are opt-in:
 
 ```bash

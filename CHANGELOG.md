@@ -17,6 +17,10 @@ Requires Go 1.27 or later. The module path remains
 - `HTTPError` with a status code, bounded response excerpt, and `RetryAfter`.
 - Deterministic regression tests, signal boundary tests, cancellation and
   concurrency checks, fuzzing, and opt-in live integration checks.
+- Complete public value mapping and recommendation-availability checks,
+  rejection tests for every missing scanner field, and mid-response deadlines.
+- Live checks for eight venues/providers across all ten supported intervals
+  (80 combinations), plus a real nonexistent-symbol rejection.
 - CI for Go 1.27 on Linux, macOS, and Windows. Live checks are manually enabled.
 
 ### Fixed

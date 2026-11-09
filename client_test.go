@@ -376,3 +376,35 @@ func TestClientConcurrentRequests(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestDeadlineWhileReadingResponse(t *testing.T) {
+	for _, mode := range []string{"context", "HTTP client"} {
+		t.Run(mode, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.(http.Flusher).Flush()
+				<-r.Context().Done() // Send headers, but never complete the body.
+			}))
+			t.Cleanup(server.Close)
+			httpClient := server.Client()
+			ctx := t.Context()
+			if mode == "context" {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, 200*time.Millisecond)
+				t.Cleanup(cancel)
+			} else {
+				httpClient.Timeout = 200 * time.Millisecond
+			}
+			client := Client{HTTPClient: httpClient, BaseURL: server.URL}
+			ta := TradingView{Value: Values{Prices: PriceValues{Close: 123}}}
+			err := client.GetContext(ctx, &ta, "BINANCE:BTCUSDT", Interval1Hour)
+			if !errors.Is(err, context.DeadlineExceeded) {
+				t.Fatalf("expected the %s deadline to interrupt the body read, got %v", mode, err)
+			}
+			if ta.Value.Prices.Close != 123 || ta.Raw != nil {
+				t.Fatal("timed-out response changed the previous snapshot")
+			}
+		})
+	}
+}
