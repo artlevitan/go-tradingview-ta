@@ -7,9 +7,14 @@
 //
 // The package exposes normalized recommendation signals together with the raw
 // numeric values returned by TradingView for a symbol and interval.
+// Raw preserves null indicator values; HasValue distinguishes them from real
+// zeroes. Recommendations with unavailable inputs are SignalUnavailable.
+// Metadata exposes the requested candle time and the scanner's update mode.
 //
-// Most callers can use (*TradingView).Get, which delegates to DefaultClient.
-// Callers that need a custom HTTP client or endpoint can use Client directly.
+// Most callers should use [TradingView.GetContext], which delegates to
+// [DefaultClient] and supports cancellation, deadlines, and interval validation.
+// [TradingView.Get] preserves the v1.3 fallback from unknown intervals to daily
+// data. Callers that need a custom HTTP client or endpoint can use [Client].
 //
 // The zero values of TradingView and Client are ready to use.
 package tradingview
